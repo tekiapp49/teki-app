@@ -45,27 +45,36 @@ function iconFor(type: "commerce" | "association", selected: boolean) {
 function RecenterOnChange({
   center,
   zoom,
+  fitRadius,
 }: {
   center: [number, number];
   zoom: number;
+  fitRadius?: number | null;
 }) {
   const map = useMap();
   useEffect(() => {
     const size = map.getSize();
+    // Si un rayon est fourni, on calcule le zoom qui fait tenir le cercle
+    // dans la VRAIE taille de la box (largeur ET hauteur). Gère aussi bien
+    // un écran de téléphone (haut) qu'une mini-carte (large et courte).
+    let targetZoom = zoom;
+    if (fitRadius && size.x > 0 && size.y > 0) {
+      const bounds = L.latLng(center[0], center[1]).toBounds(fitRadius * 2);
+      targetZoom = map.getBoundsZoom(bounds, false, L.point(16, 16));
+    }
     if (size.x === 0 || size.y === 0) {
-      map.setView(center, zoom);
+      map.setView(center, targetZoom);
       return;
     }
     const cur = map.getCenter();
     const moved =
       Math.abs(cur.lat - center[0]) > 1e-5 || Math.abs(cur.lng - center[1]) > 1e-5;
-    // Changement de lieu : animation douce. Changement de zoom seul (slider
-    // de rayon) : application instantanée pour éviter que les animations
-    // s'empilent et que le cercle « saute ».
-    if (moved) map.flyTo(center, zoom, { duration: 0.8 });
-    else map.setView(center, zoom, { animate: false });
+    // Changement de lieu : animation douce. Changement de rayon seul :
+    // application instantanée pour éviter que les animations s'empilent.
+    if (moved) map.flyTo(center, targetZoom, { duration: 0.8 });
+    else map.setView(center, targetZoom, { animate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center[0], center[1], zoom]);
+  }, [center[0], center[1], zoom, fitRadius]);
   return null;
 }
 
@@ -115,7 +124,11 @@ export default function LeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <RecenterOnChange center={center} zoom={zoom} />
+      <RecenterOnChange
+        center={center}
+        zoom={zoom}
+        fitRadius={circle?.radius}
+      />
 
       {circle && (
         <Circle
