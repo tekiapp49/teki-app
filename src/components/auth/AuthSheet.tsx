@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { IconArrowLeft, IconLoader2, IconPhone } from "@tabler/icons-react";
+import { ArrowLeft, LoaderCircle, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toE164 } from "@/lib/phone";
 import ProfileCompletion from "./ProfileCompletion";
@@ -56,9 +56,6 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
       setError("Code incorrect ou expiré. Réessaie.");
       return;
     }
-
-    // Profil déjà complété (prénom renseigné) ? Sinon, on enchaîne sur
-    // l'écran de complétion avant de revenir à l'origine.
     const userId = data.user?.id;
     let profilComplet = false;
     if (userId) {
@@ -70,12 +67,8 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
       profilComplet = Boolean(profil?.prenom);
     }
     setLoading(false);
-
-    if (profilComplet) {
-      onSuccess();
-    } else {
-      setStep("profile");
-    }
+    if (profilComplet) onSuccess();
+    else setStep("profile");
   }
 
   function handleBack() {
@@ -93,18 +86,18 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
         type="button"
         aria-label="Fermer"
         onClick={onClose}
-        className="absolute inset-0 bg-brand-text/30"
+        className="absolute inset-0 bg-ink/30"
       />
 
-      <div className="pointer-events-auto relative mx-auto max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-brand-cream px-6 pb-8 pt-6">
+      <div className="pointer-events-auto relative mx-auto max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-[30px] bg-app px-6 pb-8 pt-6">
         {step !== "profile" && (
           <button
             type="button"
             onClick={handleBack}
             aria-label="Retour"
-            className="mb-3 -ml-1 flex h-8 w-8 items-center justify-center text-brand-text"
+            className="mb-3 -ml-1 flex h-8 w-8 items-center justify-center text-ink"
           >
-            <IconArrowLeft size={22} />
+            <ArrowLeft size={22} strokeWidth={2.75} />
           </button>
         )}
 
@@ -112,15 +105,12 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
           <ProfileCompletion onDone={onSuccess} />
         ) : step === "phone" ? (
           <>
-            <h1 className="text-xl font-bold text-brand-text">
-              Ton numéro de téléphone
-            </h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-brand-text-secondary">
+            <h1 className="font-display text-[21px]">Ton numéro de téléphone</h1>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-sand-600">
               Gratuit. Sert uniquement à te reconnaître, jamais partagé.
             </p>
-
-            <div className="mt-5 flex items-center gap-2 rounded-2xl border border-brand-surface-alt bg-brand-surface px-4 py-3.5">
-              <IconPhone size={18} className="shrink-0 text-brand-green" />
+            <div className="mt-5 flex items-center gap-2 rounded-full bg-surface px-4 py-3.5">
+              <Phone size={18} strokeWidth={2.75} className="shrink-0 text-acc2-700" />
               <input
                 type="tel"
                 inputMode="tel"
@@ -129,22 +119,18 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
                 onChange={(e) => setPhone(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendCode()}
                 placeholder="06 12 34 56 78"
-                className="w-full bg-transparent text-base text-brand-text outline-none placeholder:text-brand-text-secondary"
+                className="w-full bg-transparent text-[16px] text-ink outline-none placeholder:text-sand-600"
               />
             </div>
-
-            {error && (
-              <p className="mt-2 px-1 text-sm text-brand-terracotta">{error}</p>
-            )}
-
+            {error && <p className="mt-2 px-1 text-[13px] text-acc-700">{error}</p>}
             <button
               type="button"
               onClick={sendCode}
               disabled={loading}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-70"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app disabled:opacity-70"
             >
               {loading ? (
-                <IconLoader2 size={18} className="animate-spin" />
+                <LoaderCircle size={18} className="animate-spin" />
               ) : (
                 "Continuer"
               )}
@@ -152,13 +138,10 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
           </>
         ) : (
           <>
-            <h1 className="text-xl font-bold text-brand-text">
-              Vérifie ton numéro
-            </h1>
-            <p className="mt-1.5 text-sm leading-relaxed text-brand-text-secondary">
+            <h1 className="font-display text-[21px]">Vérifie ton numéro</h1>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-sand-600">
               Un code a été envoyé au {phone}. Gratuit, ça prend 30 secondes.
             </p>
-
             <div className="relative mt-5">
               <input
                 type="text"
@@ -180,10 +163,10 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
                   return (
                     <div
                       key={i}
-                      className={`flex h-14 flex-1 items-center justify-center rounded-2xl border-2 text-xl font-bold text-brand-text ${
+                      className={`flex h-14 flex-1 items-center justify-center rounded-2xl border-2 font-display text-xl text-ink ${
                         active
-                          ? "border-brand-green bg-brand-cream"
-                          : "border-brand-surface-alt bg-brand-surface"
+                          ? "border-acc2-600 bg-app"
+                          : "border-divider bg-surface"
                       }`}
                     >
                       {code[i] ?? ""}
@@ -192,29 +175,24 @@ export default function AuthSheet({ onClose, onSuccess }: AuthSheetProps) {
                 })}
               </div>
             </div>
-
-            {error && (
-              <p className="mt-2 px-1 text-sm text-brand-terracotta">{error}</p>
-            )}
-
+            {error && <p className="mt-2 px-1 text-[13px] text-acc-700">{error}</p>}
             <button
               type="button"
               onClick={verify}
               disabled={loading || code.length !== CODE_LENGTH}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app disabled:opacity-50"
             >
               {loading ? (
-                <IconLoader2 size={18} className="animate-spin" />
+                <LoaderCircle size={18} className="animate-spin" />
               ) : (
                 "Valider"
               )}
             </button>
-
             <button
               type="button"
               onClick={sendCode}
               disabled={loading}
-              className="mt-4 w-full text-center text-sm text-brand-text-on-brown underline underline-offset-4 disabled:opacity-70"
+              className="mt-4 w-full text-center text-[13px] text-acc-700 underline underline-offset-4 disabled:opacity-70"
             >
               Renvoyer le code
             </button>

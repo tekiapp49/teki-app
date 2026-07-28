@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IconCheck, IconPhoto } from "@tabler/icons-react";
+import { Check, ImageIcon } from "lucide-react";
 import type { FicheDemo } from "@/lib/fiches/demo";
 import { addPublication, type PubType } from "@/lib/publications";
 import ProBanner from "./ProBanner";
@@ -13,7 +13,6 @@ const TYPES: { key: TypePub; label: string }[] = [
   { key: "evenement", label: "Événement" },
   { key: "actu", label: "Actu" },
 ];
-
 const LABEL_TEXTE: Record<TypePub, string> = {
   promo: "L'offre",
   evenement: "L'événement",
@@ -56,24 +55,22 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
 
   if (done) {
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-md bg-brand-cream">
+      <main className="mx-auto min-h-dvh w-full max-w-md bg-app">
         <ProBanner nom={fiche.nom} type={type} backHref={`/pro/${fiche.id}`} />
         <div className="flex flex-col items-center px-6 pt-24 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-green text-white">
-            <IconCheck size={28} />
-          </div>
-          <h1 className="mt-4 text-xl font-bold text-brand-text">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-acc2-800 text-app">
+            <Check size={28} strokeWidth={2.75} />
+          </span>
+          <h1 className="mt-4 font-display text-[21px]">
             {programmer ? "Publication programmée" : "Publication publiée"}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-            Tu la retrouves dans ton tableau de bord. (L&apos;écriture dans
-            Supabase se fera quand ta fiche sera en base, avec toi comme
-            propriétaire.)
+          <p className="mt-2 text-[13px] leading-relaxed text-sand-600">
+            Tu la retrouves dans ton tableau de bord.
           </p>
           <button
             type="button"
             onClick={() => router.push(`/pro/${fiche.id}`)}
-            className="mt-6 rounded-2xl bg-brand-green px-5 py-3 text-sm font-semibold text-white"
+            className="mt-6 rounded-full bg-acc2-800 px-5 py-3 font-display text-[13.5px] text-app"
           >
             Retour au tableau de bord
           </button>
@@ -83,27 +80,26 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
   }
 
   const peutPublier = texte.trim().length > 0;
+  const champ =
+    "mt-1 w-full rounded-2xl bg-surface px-4 py-3 text-[16px] text-ink outline-none placeholder:text-sand-600";
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-md bg-brand-cream">
+    <main className="mx-auto min-h-dvh w-full max-w-md bg-app">
       <ProBanner nom={fiche.nom} type={type} backHref={`/pro/${fiche.id}`} />
 
-      <div className="px-5 pb-10 pt-5">
-        <h1 className="text-xl font-bold text-brand-text">
-          Nouvelle publication
-        </h1>
+      <div className="px-[18px] pb-10 pt-5">
+        <h1 className="font-display text-[21px]">Nouvelle publication</h1>
 
-        {/* Type */}
         <div className="mt-4 flex gap-2">
           {TYPES.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTypePub(t.key)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold ${
                 typePub === t.key
-                  ? "bg-brand-green text-white"
-                  : "bg-brand-surface-alt text-brand-text-secondary"
+                  ? "bg-acc2-800 font-display text-app"
+                  : "bg-surface text-sand-600"
               }`}
             >
               {t.label}
@@ -111,24 +107,20 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
           ))}
         </div>
 
-        {/* Texte */}
-        <label className="mt-4 block text-sm text-brand-text-secondary">
+        <label className="mt-4 block text-[13px] text-sand-600">
           {LABEL_TEXTE[typePub]}
         </label>
         <input
           type="text"
           value={texte}
           onChange={(e) => setTexte(e.target.value)}
-          placeholder={
-            typePub === "promo" ? "- 20 % sur les viennoiseries" : ""
-          }
-          className="mt-1 w-full rounded-xl bg-brand-surface px-4 py-3 text-base text-brand-text outline-none placeholder:text-brand-text-secondary"
+          placeholder={typePub === "promo" ? "−20 % sur les viennoiseries" : ""}
+          className={champ}
         />
 
-        {/* Conditions (promo & événement) */}
         {typePub !== "actu" && (
           <>
-            <label className="mt-3 block text-sm text-brand-text-secondary">
+            <label className="mt-3 block text-[13px] text-sand-600">
               Conditions
             </label>
             <input
@@ -136,35 +128,30 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
               value={conditions}
               onChange={(e) => setConditions(e.target.value)}
               placeholder="Dans la limite des stocks disponibles"
-              className="mt-1 w-full rounded-xl border border-brand-surface-alt bg-brand-cream px-4 py-3 text-base text-brand-text outline-none placeholder:text-brand-text-secondary"
+              className={champ}
             />
           </>
         )}
 
-        {/* Photo (à venir) */}
         <button
           type="button"
           disabled
-          title="Bientôt : ajouter une photo"
-          className="mt-4 flex items-center gap-2 text-sm text-brand-text-on-brown opacity-60"
+          className="mt-4 flex items-center gap-2 text-[13px] text-sand-500 opacity-70"
         >
-          <IconPhoto size={20} />
+          <ImageIcon size={20} strokeWidth={2.75} />
           Ajouter une photo
         </button>
 
-        {/* Durée (promo) */}
         {typePub === "promo" && (
           <>
-            <p className="mt-5 text-sm text-brand-text-secondary">
-              Durée de l&apos;offre
-            </p>
+            <p className="mt-5 text-[13px] text-sand-600">Durée de l&apos;offre</p>
             <div className="mt-1 grid grid-cols-2 gap-3">
               <Field label="Du">
                 <input
                   type="date"
                   value={du}
                   onChange={(e) => setDu(e.target.value)}
-                  className="w-full bg-transparent text-sm text-brand-text outline-none"
+                  className="w-full bg-transparent text-[14px] text-ink outline-none"
                 />
               </Field>
               <Field label="Au">
@@ -172,25 +159,24 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
                   type="date"
                   value={au}
                   onChange={(e) => setAu(e.target.value)}
-                  className="w-full bg-transparent text-sm text-brand-text outline-none"
+                  className="w-full bg-transparent text-[14px] text-ink outline-none"
                 />
               </Field>
             </div>
           </>
         )}
 
-        {/* Quand publier */}
-        <p className="mt-5 text-sm text-brand-text-secondary">Quand publier ?</p>
+        <p className="mt-5 text-[13px] text-sand-600">Quand publier ?</p>
         <div className="mt-1 flex gap-2">
           {(["maintenant", "programmer"] as const).map((q) => (
             <button
               key={q}
               type="button"
               onClick={() => setQuand(q)}
-              className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold ${
+              className={`flex-1 rounded-full px-4 py-3 text-[13px] font-semibold ${
                 quand === q
-                  ? "bg-brand-green text-white"
-                  : "bg-brand-surface-alt text-brand-text-secondary"
+                  ? "bg-acc2-800 font-display text-app"
+                  : "bg-surface text-sand-600"
               }`}
             >
               {q === "maintenant" ? "Maintenant" : "Programmer"}
@@ -205,7 +191,7 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
                 type="date"
                 value={le}
                 onChange={(e) => setLe(e.target.value)}
-                className="w-full bg-transparent text-sm text-brand-text outline-none"
+                className="w-full bg-transparent text-[14px] text-ink outline-none"
               />
             </Field>
             <Field label="À">
@@ -213,7 +199,7 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
                 type="time"
                 value={heure}
                 onChange={(e) => setHeure(e.target.value)}
-                className="w-full bg-transparent text-sm text-brand-text outline-none"
+                className="w-full bg-transparent text-[14px] text-ink outline-none"
               />
             </Field>
           </div>
@@ -223,7 +209,7 @@ export default function ProPublier({ fiche }: { fiche: FicheDemo }) {
           type="button"
           onClick={publier}
           disabled={!peutPublier}
-          className="mt-6 w-full rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+          className="mt-6 w-full rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app disabled:opacity-50"
         >
           {programmer ? "Programmer la publication" : "Publier maintenant"}
         </button>
@@ -241,10 +227,8 @@ function Field({
 }) {
   return (
     <div>
-      <p className="text-xs text-brand-text-secondary">{label}</p>
-      <div className="mt-1 rounded-xl bg-brand-surface-alt px-3 py-2.5">
-        {children}
-      </div>
+      <p className="text-[12px] text-sand-600">{label}</p>
+      <div className="mt-1 rounded-2xl bg-surface px-3 py-2.5">{children}</div>
     </div>
   );
 }

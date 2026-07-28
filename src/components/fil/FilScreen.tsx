@@ -6,28 +6,82 @@ import Image from "next/image";
 import {
   Calendar,
   ChevronRight,
-  Info,
-  MapPin,
-  Search,
+  Store,
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { FAMILLES, FEED, type FeedItem, type Filtre } from "@/lib/feed/demo";
+import { FAMILLES, type Filtre } from "@/lib/feed/demo";
+import {
+  communeFromAdresse,
+  datePill,
+  dateLongue,
+  distanceLabel,
+  feedKind,
+  fetchFeed,
+  type FeedPost,
+} from "@/lib/db";
 import { getLieu } from "@/lib/lieu";
 import { useClientValue } from "@/lib/useClientValue";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_TERRITORY_NAME } from "@/lib/geo/constants";
 import { useAuth } from "@/components/auth/AuthProvider";
 import BottomNav from "@/components/nav/BottomNav";
+import SearchOverlay from "@/components/search/SearchOverlay";
+
+type Item = {
+  id: string;
+  famille: Filtre;
+  kind: "commerce" | "evenement" | "association";
+  title: string;
+  meta: string;
+  kicker: string;
+  image?: string;
+  datePill?: string;
+  metres: number;
+  href: string;
+};
+
+function toItem(post: FeedPost, lieu: ReturnType<typeof getLieu>): Item {
+  const kind = feedKind(post);
+  const commerce = kind === "commerce";
+  const commune = communeFromAdresse(post.fiche.adresse);
+  const { metres, label } = distanceLabel(post.fiche, lieu);
+  const evenement = post.publication.type === "evenement";
+  return {
+    id: post.publication.id,
+    famille: commerce ? "commerces" : evenement ? "sorties" : "entraide",
+    kind,
+    title: evenement ? post.publication.texte : post.fiche.nom,
+    meta: evenement
+      ? [dateLongue(post.publication.date_evenement), label]
+          .filter(Boolean)
+          .join(" · ")
+      : post.publication.texte,
+    kicker: commerce
+      ? `Promo${label ? ` · ${label}` : ""}`
+      : evenement
+        ? `Événement · ${commune}`
+        : `Association · ${commune}`,
+    image: post.fiche.photos?.[0],
+    datePill: evenement ? datePill(post.publication.date_evenement) : undefined,
+    metres,
+    href: `/fiche/${post.fiche.id}`,
+  };
+}
 
 export default function FilScreen() {
   const supabase = useMemo(() => createClient(), []);
   const { user, requireAuth } = useAuth();
   const [filtre, setFiltre] = useState<Filtre>("tout");
   const [prenom, setPrenom] = useState<string | null>(null);
-  const lieuName =
-    useClientValue(() => getLieu()?.name ?? null, null) ??
-    DEFAULT_TERRITORY_NAME;
+  const [posts, setPosts] = useState<FeedPost[] | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const lieu = useClientValue(() => getLieu(), null);
+  const lieuName = lieu?.name ?? DEFAULT_TERRITORY_NAME;
+
+  useEffect(() => {
+    fetchFeed().then(setPosts);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -40,17 +94,18 @@ export default function FilScreen() {
   }, [user, supabase]);
 
   const items = useMemo(() => {
+    if (!posts) return null;
+    const all = posts.map((p) => toItem(p, lieu));
     const filtered =
-      filtre === "tout" ? FEED : FEED.filter((f) => f.famille === filtre);
-    return [...filtered].sort((a, b) => a.distanceM - b.distanceM);
-  }, [filtre]);
+      filtre === "tout" ? all : all.filter((i) => i.famille === filtre);
+    return filtered.sort((a, b) => a.metres - b.metres);
+  }, [posts, lieu, filtre]);
 
   const salutation = user && prenom ? `Salut ${prenom} ` : "Bonjour ";
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-app">
       <div className="flex-1 pb-24">
-        {/* En-tête vert */}
         <header className="rounded-b-[30px] bg-acc2-800 px-[18px] pb-[18px] pt-[22px] text-app">
           <div className="flex items-baseline justify-between">
             <div className="flex items-center gap-2.5">
@@ -69,19 +124,21 @@ export default function FilScreen() {
             <button
               type="button"
               aria-label="Rechercher"
+              onClick={() => setSearchOpen(true)}
               className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full bg-acc2-700 text-app"
             >
-              <Search size={18} strokeWidth={2.75} />
+              <SearchIcon />
             </button>
           </div>
           <p className="mt-0.5 text-[13px] text-acc2-300">
-            Il se passe {FEED.length} choses autour de toi.
+            {posts === null
+              ? "On regarde autour de toi…"
+              : `Il se passe ${posts.length} chose${posts.length > 1 ? "s" : ""} autour de toi.`}
           </p>
 
-          {/* Lieu + rayon */}
           <div className="mt-[13px] flex gap-2">
             <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink">
-              <MapPin size={14} strokeWidth={2.75} />
+              <PinIcon />
               {lieuName} ▾
             </span>
             <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
@@ -89,7 +146,6 @@ export default function FilScreen() {
             </span>
           </div>
 
-          {/* Familles */}
           <div className="mt-2.5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {FAMILLES.map(({ key, label }) => {
               const actif = filtre === key;
@@ -111,24 +167,25 @@ export default function FilScreen() {
           </div>
         </header>
 
-        {/* Fil */}
         <div className="px-[18px] pt-4">
           <p className="text-[11px] uppercase tracking-[0.12em] text-acc-700">
             Autour de toi
           </p>
           <div className="mt-[9px] flex flex-col gap-2.5">
-            {items.map((item) => (
-              <FeedCard key={item.id} item={item} />
-            ))}
-            {items.length === 0 && (
+            {items === null && (
               <p className="py-6 text-center text-[13px] text-sand-600">
-                Rien d&apos;actif dans cette famille pour l&apos;instant.
+                Chargement…
+              </p>
+            )}
+            {items?.map((item) => <FeedCard key={item.id} item={item} />)}
+            {items?.length === 0 && (
+              <p className="py-6 text-center text-[13px] text-sand-600">
+                Rien d&apos;actif près de toi pour l&apos;instant.
               </p>
             )}
           </div>
 
-          {/* Incitation inscription (visiteur) */}
-          {!user && (
+          {!user && items && items.length > 0 && (
             <div className="mt-4 rounded-[22px] bg-acc2-800 p-5 text-app">
               <h2 className="font-display text-[18px]">
                 Tu fais déjà partie de TéKi
@@ -149,32 +206,27 @@ export default function FilScreen() {
         </div>
       </div>
 
+      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
       <BottomNav />
     </main>
   );
 }
 
-const ARCH_ICON: Record<FeedItem["kind"], LucideIcon> = {
-  commerce: Info,
+const ARCH_ICON: Record<Item["kind"], LucideIcon> = {
+  commerce: Store,
   association: Users,
   evenement: Calendar,
-  info: Info,
 };
 
-function FeedCard({ item }: { item: FeedItem }) {
+function FeedCard({ item }: { item: Item }) {
   const commerce = item.kind === "commerce";
   const ArchIcon = ARCH_ICON[item.kind];
 
-  const kicker = commerce
-    ? `Promo · ${item.distanceLabel}`
-    : item.kind === "association"
-      ? `Association · ${item.commune ?? ""}`
-      : item.kind === "evenement"
-        ? `Événement · ${item.commune ?? ""}`
-        : "Info · Territoire";
-
-  const inner = (
-    <div className="flex items-center gap-[13px] rounded-[26px] border border-divider bg-white py-[9px] pl-[9px] pr-[13px]">
+  return (
+    <Link
+      href={item.href}
+      className="flex items-center gap-[13px] rounded-[26px] border border-divider bg-white py-[9px] pl-[9px] pr-[13px]"
+    >
       <span
         className={`relative flex-none ${
           item.image
@@ -197,15 +249,17 @@ function FeedCard({ item }: { item: FeedItem }) {
             commerce ? "text-acc-700" : "text-acc2-700"
           }`}
         >
-          {kicker}
+          {item.kicker}
         </span>
-        <h3 className="mt-0.5 text-[15.5px] font-semibold">{item.nom}</h3>
+        <h3 className="mt-0.5 truncate text-[15.5px] font-semibold">
+          {item.title}
+        </h3>
         <p
-          className={`mt-px text-[12px] ${
+          className={`mt-px truncate text-[12px] ${
             commerce ? "text-acc-800" : "text-acc2-800"
           }`}
         >
-          {item.accroche}
+          {item.meta}
         </p>
       </div>
 
@@ -216,8 +270,42 @@ function FeedCard({ item }: { item: FeedItem }) {
       >
         <ChevronRight size={15} strokeWidth={2.75} />
       </span>
-    </div>
+    </Link>
   );
+}
 
-  return item.href ? <Link href={item.href}>{inner}</Link> : inner;
+function SearchIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
 }

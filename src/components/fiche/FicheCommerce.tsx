@@ -10,25 +10,35 @@ import {
   Lock,
   Share,
 } from "lucide-react";
-import type { FicheDemo } from "@/lib/fiches/demo";
+import {
+  datePill,
+  dateLongue,
+  distanceLabel,
+  fetchFiche,
+  type Fiche,
+  type Publication,
+} from "@/lib/db";
+import { getLieu } from "@/lib/lieu";
+import { useClientValue } from "@/lib/useClientValue";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useFavori } from "@/lib/favoris";
 import BottomNav from "@/components/nav/BottomNav";
 
-export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
+const JOUR_KEYS = ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"];
+
+export default function FicheCommerce({ id }: { id: string }) {
   const { user, requireAuth } = useAuth();
   const inscrit = !!user;
   const [toast, setToast] = useState(false);
-  const [favori, toggleFavori] = useFavori(fiche.id);
+  const [data, setData] = useState<
+    { fiche: Fiche; publications: Publication[] } | null | "loading"
+  >("loading");
+  const [favori, toggleFavori] = useFavori(id);
+  const lieu = useClientValue(() => getLieu(), null);
 
-  function demanderInscription() {
-    requireAuth(() => setToast(true));
-  }
-
-  function suivre() {
-    if (!inscrit) demanderInscription();
-    else toggleFavori();
-  }
+  useEffect(() => {
+    fetchFiche(id).then((d) => setData(d ?? null));
+  }, [id]);
 
   useEffect(() => {
     if (!toast) return;
@@ -36,15 +46,54 @@ export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
     return () => clearTimeout(t);
   }, [toast]);
 
+  function demanderInscription() {
+    requireAuth(() => setToast(true));
+  }
+  function suivre() {
+    if (!inscrit) demanderInscription();
+    else toggleFavori();
+  }
+
+  if (data === "loading") {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center bg-app text-sand-600">
+        Chargement…
+        <BottomNav />
+      </main>
+    );
+  }
+  if (data === null) {
+    return (
+      <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-3 bg-app px-6 text-center">
+        <p className="text-sand-600">Cette fiche n&apos;existe pas ou plus.</p>
+        <Link
+          href="/fil"
+          className="rounded-full bg-acc px-5 py-2.5 font-display text-[13.5px] text-white"
+        >
+          Retour à l&apos;accueil
+        </Link>
+        <BottomNav />
+      </main>
+    );
+  }
+
+  const { fiche, publications } = data;
+  const promo = publications.find((p) => p.type === "promo");
+  const actu = publications.find((p) => p.type === "actu");
+  const events = publications.filter((p) => p.type === "evenement");
+
   const initiales = fiche.nom
     .split(" ")
     .filter((m) => /[A-Za-zÀ-ÿ]/.test(m))
     .slice(0, 2)
     .map((m) => m[0].toUpperCase())
     .join("");
-
+  const image = fiche.photos?.[0];
+  const { label: dist } = distanceLabel(fiche, lieu);
+  const todayHours = fiche.horaires?.[JOUR_KEYS[new Date().getDay()]];
+  const closeH = todayHours?.split(/[–-]/).pop()?.trim();
   const itineraireUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(
-    fiche.adresse,
+    fiche.adresse ?? fiche.nom,
   )}`;
 
   return (
@@ -52,8 +101,10 @@ export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
       <div className="flex-1 pb-24">
         {/* Photo */}
         <div
-          className="washed relative h-[216px] rounded-b-[30px] bg-cover bg-center"
-          style={{ backgroundImage: `url('${fiche.image}')` }}
+          className={`relative h-[216px] rounded-b-[30px] ${
+            image ? "washed bg-cover bg-center" : "bg-acc2-200"
+          }`}
+          style={image ? { backgroundImage: `url('${image}')` } : undefined}
         >
           <Link
             href="/fil"
@@ -91,11 +142,11 @@ export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
           <div className="flex items-baseline justify-between gap-2.5">
             <h1 className="font-display text-[23px]">{fiche.nom}</h1>
             <span className="flex-none text-[12px] font-bold text-acc2-700">
-              {fiche.ouvert ? `Ouvert · ${fiche.fermeA}` : "Fermé"}
+              {todayHours ? `Ouvert · ${closeH}` : "Fermé aujourd'hui"}
             </span>
           </div>
           <p className="mt-[3px] text-[13px] text-sand-600">
-            {fiche.metier} · {fiche.adresse} · {fiche.distance}
+            {[fiche.categorie, fiche.adresse, dist].filter(Boolean).join(" · ")}
           </p>
 
           {/* Actions */}
@@ -132,61 +183,97 @@ export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
             </button>
           </div>
 
-          {/* Promo pleine voix */}
-          {fiche.offre && (
+          {/* Promo (magenta) ou actu (vert) */}
+          {promo && (
             <div className="mt-3.5 rounded-[22px] bg-acc px-4 py-3.5 text-app">
               <div className="flex items-center justify-between">
                 <span className="text-[10.5px] uppercase tracking-[0.12em] text-acc-100">
                   Promo en cours
                 </span>
-                <span className="rounded-full bg-app px-[11px] py-[3px] font-display text-[11px] text-acc-800">
-                  −20 %
-                </span>
+                <Lock size={15} strokeWidth={2.75} className={inscrit ? "hidden" : ""} />
               </div>
-              <h3 className="mt-1.5 font-display text-[17px] text-app">
-                {inscrit ? fiche.offre.precis : fiche.offre.teaser}
+              <h3
+                className={`mt-1.5 font-display text-[17px] text-app ${
+                  inscrit ? "" : "select-none blur-[5px]"
+                }`}
+              >
+                {promo.texte}
               </h3>
-              <p className="mt-1 text-[12.5px] text-acc-100">
-                {fiche.offre.conditions}
-              </p>
+              {promo.conditions && (
+                <p
+                  className={`mt-1 text-[12.5px] text-acc-100 ${
+                    inscrit ? "" : "select-none blur-[4px]"
+                  }`}
+                >
+                  {promo.conditions}
+                </p>
+              )}
               {!inscrit && (
                 <button
                   type="button"
                   onClick={demanderInscription}
-                  className="mt-2 flex items-center gap-1.5 text-left text-[12px]"
+                  className="mt-2 text-[12px]"
                 >
-                  <Lock size={14} strokeWidth={2.75} />
-                  <span>
-                    <b>Gratuit</b> · inscris-toi pour voir l&apos;offre
-                  </span>
+                  <b>Gratuit</b> · inscris-toi pour voir l&apos;offre
                 </button>
               )}
             </div>
           )}
+          {!promo && actu && (
+            <div className="mt-3.5 rounded-[22px] bg-acc2-100 px-4 py-3.5 text-acc2-900">
+              <span className="text-[10.5px] uppercase tracking-[0.12em] text-acc2-700">
+                En ce moment
+              </span>
+              <h3 className="mt-1 font-display text-[16px]">{actu.texte}</h3>
+            </div>
+          )}
 
           {/* Prochainement ici */}
-          <p className="mt-4 text-[11px] uppercase tracking-[0.12em] text-sand-600">
-            Prochainement ici
-          </p>
-          <div className="mt-[9px] flex items-center gap-[13px] rounded-[22px] border border-divider bg-white px-[13px] py-[11px]">
-            <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-full bg-acc2-700 text-app">
-              <b className="font-display text-[14px] leading-none">2</b>
-              <span className="text-[8.5px] tracking-[0.06em]">AOÛT</span>
-            </span>
-            <div className="min-w-0">
-              <h3 className="text-[14.5px] font-semibold">
-                Atelier pain au levain
-              </h3>
-              <p className="mt-px flex items-center gap-1 text-[12px] text-acc2-800">
-                <Calendar size={12} strokeWidth={2.75} />
-                Samedi 10 h · 8 places
+          {events.length > 0 && (
+            <>
+              <p className="mt-4 text-[11px] uppercase tracking-[0.12em] text-sand-600">
+                Prochainement ici
               </p>
-            </div>
-          </div>
+              <div className="mt-[9px] flex flex-col gap-2">
+                {events.map((ev) => {
+                  const pill = datePill(ev.date_evenement) ?? "";
+                  const [jour, mois] = pill.split(" ");
+                  return (
+                    <div
+                      key={ev.id}
+                      className="flex items-center gap-[13px] rounded-[22px] border border-divider bg-white px-[13px] py-[11px]"
+                    >
+                      <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-full bg-acc2-700 text-app">
+                        <b className="font-display text-[14px] leading-none">
+                          {jour}
+                        </b>
+                        <span className="text-[8.5px] uppercase tracking-[0.06em]">
+                          {mois}
+                        </span>
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="text-[14.5px] font-semibold">
+                          {ev.texte}
+                        </h3>
+                        <p className="mt-px flex items-center gap-1 text-[12px] text-acc2-800">
+                          <Calendar size={12} strokeWidth={2.75} />
+                          {[dateLongue(ev.date_evenement), ev.conditions]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-          <p className="mt-3.5 text-[13px] leading-relaxed text-sand-700">
-            {fiche.description}
-          </p>
+          {fiche.description && (
+            <p className="mt-3.5 text-[13px] leading-relaxed text-sand-700">
+              {fiche.description}
+            </p>
+          )}
         </div>
       </div>
 

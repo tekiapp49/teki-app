@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { IconHome, IconLoader2, IconPlus } from "@tabler/icons-react";
+import { Home, LoaderCircle, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SUGGESTED_COMMUNES } from "@/lib/geo/constants";
 import { INTERETS } from "@/lib/interets";
 import type { CommuneResult } from "@/lib/geo/nominatim";
 import CommuneSearch from "@/components/map/CommuneSearch";
 
-// « JJ/MM/AAAA » -> « AAAA-MM-JJ » (format date Postgres) ; null si vide
-// ou non exploitable (le champ est optionnel, on ne bloque jamais).
 function parseFrDate(input: string): string | null {
   const m = input.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (!m) return null;
@@ -69,66 +67,64 @@ export default function ProfileCompletion({ onDone }: { onDone: () => void }) {
     onDone();
   }
 
+  const champ =
+    "mt-1 w-full rounded-2xl bg-surface px-4 py-3 text-[16px] text-ink outline-none placeholder:text-sand-600";
+  const label = "mt-3 block text-[13px] text-sand-600";
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-brand-text">Ton profil</h1>
-      <p className="text-sm text-brand-text-on-brown">* champ obligatoire</p>
+      <h1 className="font-display text-[23px]">Ton profil</h1>
+      <p className="text-[13px] text-sand-600">* champ obligatoire</p>
 
-      {/* Prénom (obligatoire) */}
-      <label className="mt-4 block text-sm text-brand-text-secondary">
-        Prénom *
-      </label>
+      <label className={`${label} mt-4`}>Prénom *</label>
       <input
         type="text"
         value={prenom}
         onChange={(e) => setPrenom(e.target.value)}
         placeholder="Claude"
-        className="mt-1 w-full rounded-xl bg-brand-surface px-4 py-3 text-base text-brand-text outline-none placeholder:text-brand-text-secondary"
+        className={champ}
       />
 
-      {/* Nom */}
-      <label className="mt-3 block text-sm text-brand-text-secondary">Nom</label>
+      <label className={label}>Nom</label>
       <input
         type="text"
         value={nom}
         onChange={(e) => setNom(e.target.value)}
-        className="mt-1 w-full rounded-xl bg-brand-surface px-4 py-3 text-base text-brand-text outline-none"
+        className={champ}
       />
 
-      {/* Centres d'intérêt (au moins 1) */}
-      <p className="mt-4 text-sm text-brand-text-secondary">
+      <p className="mt-4 text-[13px] text-sand-600">
         Ça t&apos;intéresse ? (au moins 1)
       </p>
       <div className="mt-2 grid grid-cols-4 gap-2">
-        {INTERETS.map(({ key, label, Icon }) => {
+        {INTERETS.map(({ key, label: lab, Icon }) => {
           const actif = interets.includes(key);
           return (
             <button
               key={key}
               type="button"
               onClick={() => toggleInteret(key)}
-              className={`flex flex-col items-center justify-center gap-1 rounded-2xl py-3 text-xs font-semibold ${
+              className={`flex flex-col items-center justify-center gap-1 rounded-2xl py-3 text-[12px] font-semibold ${
                 actif
-                  ? "bg-brand-green text-white"
-                  : "bg-brand-surface-alt text-brand-text-secondary"
+                  ? "bg-acc2-800 text-app"
+                  : "bg-surface text-sand-600"
               }`}
             >
-              <Icon size={22} />
-              {label}
+              <Icon size={22} strokeWidth={2.75} />
+              {lab}
             </button>
           );
         })}
       </div>
 
-      {/* Mes lieux */}
-      <p className="mt-4 text-sm text-brand-text-secondary">Mes lieux</p>
+      <p className="mt-4 text-[13px] text-sand-600">Mes lieux</p>
       {!editLieu ? (
         <button
           type="button"
           onClick={() => setEditLieu(true)}
-          className="mt-1 flex w-full items-center gap-2 py-2 text-left text-base text-brand-text"
+          className="mt-1 flex w-full items-center gap-2 py-2 text-left text-[16px] text-ink"
         >
-          <IconHome size={20} className="shrink-0 text-brand-green" />
+          <Home size={20} strokeWidth={2.75} className="shrink-0 text-acc2-700" />
           Maison · {lieu.name}
         </button>
       ) : (
@@ -145,46 +141,43 @@ export default function ProfileCompletion({ onDone }: { onDone: () => void }) {
       <button
         type="button"
         disabled
-        title="Bientôt : plusieurs lieux (travail, famille…)"
-        className="flex items-center gap-2 py-1 text-base text-brand-text-on-brown opacity-60"
+        className="flex items-center gap-2 py-1 text-[16px] text-sand-500 opacity-70"
       >
-        <IconPlus size={20} className="shrink-0" />
+        <Plus size={20} strokeWidth={2.75} className="shrink-0" />
         Ajouter un lieu (travail…)
       </button>
 
-      {/* Naissance */}
-      <label className="mt-4 block text-sm text-brand-text-secondary">
-        Naissance
-      </label>
+      <label className={label}>Naissance</label>
       <input
         type="text"
         inputMode="numeric"
         value={naissance}
         onChange={(e) => setNaissance(e.target.value)}
         placeholder="JJ/MM/AAAA"
-        className="mt-1 w-full rounded-xl bg-brand-surface px-4 py-3 text-base text-brand-text outline-none placeholder:text-brand-text-secondary"
+        className={champ}
       />
 
-      {/* Adresse */}
-      <label className="mt-3 block text-sm text-brand-text-secondary">
-        Adresse
-      </label>
+      <label className={label}>Adresse</label>
       <input
         type="text"
         value={adresse}
         onChange={(e) => setAdresse(e.target.value)}
-        className="mt-1 w-full rounded-xl bg-brand-surface px-4 py-3 text-base text-brand-text outline-none"
+        className={champ}
       />
 
-      {error && <p className="mt-3 text-sm text-brand-terracotta">{error}</p>}
+      {error && <p className="mt-3 text-[13px] text-acc-700">{error}</p>}
 
       <button
         type="button"
         onClick={terminer}
         disabled={!peutTerminer || loading}
-        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app disabled:opacity-50"
       >
-        {loading ? <IconLoader2 size={18} className="animate-spin" /> : "Terminer"}
+        {loading ? (
+          <LoaderCircle size={18} className="animate-spin" />
+        ) : (
+          "Terminer"
+        )}
       </button>
     </div>
   );

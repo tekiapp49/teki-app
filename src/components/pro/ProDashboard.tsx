@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconChevronRight, IconPlus, IconTrash } from "@tabler/icons-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import type { FicheDemo } from "@/lib/fiches/demo";
 import {
   deletePublication,
@@ -18,7 +18,6 @@ const TYPE_LABEL: Record<PubType, string> = {
   actu: "Actu",
 };
 
-// Tableau de bord de l'espace pro (page 17) + liste des publications.
 export default function ProDashboard({ fiche }: { fiche: FicheDemo }) {
   const type = fiche.categorie.toLowerCase().includes("commerce")
     ? "commerce"
@@ -36,36 +35,34 @@ export default function ProDashboard({ fiche }: { fiche: FicheDemo }) {
   }
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-md bg-brand-cream">
+    <main className="mx-auto min-h-dvh w-full max-w-md bg-app">
       <ProBanner nom={fiche.nom} type={type} backHref="/profil" />
 
-      <div className="px-5 pb-10 pt-5">
-        {/* Stats simples */}
+      <div className="px-[18px] pb-10 pt-5">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-brand-green p-4 text-white">
-            <p className="text-3xl font-bold">34</p>
-            <p className="text-sm">Favoris</p>
+          <div className="rounded-2xl bg-acc2-800 p-4 text-app">
+            <p className="font-display text-[26px]">34</p>
+            <p className="text-[13px] text-acc2-200">Favoris</p>
           </div>
-          <div className="rounded-2xl bg-brand-surface-alt p-4">
-            <p className="text-3xl font-bold text-brand-text">210</p>
-            <p className="text-sm text-brand-text-secondary">Vues (30j)</p>
+          <div className="rounded-2xl bg-surface p-4">
+            <p className="font-display text-[26px] text-ink">210</p>
+            <p className="text-[13px] text-sand-600">Vues (30j)</p>
           </div>
         </div>
 
         <Link
           href={`/pro/${fiche.id}/publier`}
-          className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white"
+          className="mt-4 flex items-center justify-center gap-2 rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app"
         >
-          <IconPlus size={18} />
+          <Plus size={18} strokeWidth={2.75} />
           Publier une actu
         </Link>
 
-        {/* Mes publications */}
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-brand-text-on-brown">
+        <p className="mt-6 text-[11px] uppercase tracking-[0.12em] text-sand-600">
           Mes publications
         </p>
         {pubs.length === 0 ? (
-          <p className="mt-2 text-sm text-brand-text-secondary">
+          <p className="mt-2 text-[13px] text-sand-600">
             Aucune publication pour l&apos;instant.
           </p>
         ) : (
@@ -73,48 +70,47 @@ export default function ProDashboard({ fiche }: { fiche: FicheDemo }) {
             {pubs.map((p) => (
               <div
                 key={p.id}
-                className="flex items-start gap-3 rounded-2xl bg-brand-surface p-4"
+                className="flex items-start gap-3 rounded-2xl border border-divider bg-white p-4"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-brand-terracotta px-2 py-0.5 text-xs font-semibold text-white">
+                    <span className="rounded-full bg-acc px-2 py-0.5 font-display text-[11px] text-app">
                       {TYPE_LABEL[p.type]}
                     </span>
-                    <span className="text-xs text-brand-text-secondary">
+                    <span className="text-[11px] text-sand-600">
                       {p.quand === "programmer"
                         ? `Programmée${p.le ? ` · ${p.le}${p.heure ? ` ${p.heure}` : ""}` : ""}`
                         : "Publiée"}
                     </span>
                   </div>
-                  <p className="mt-1 font-medium text-brand-text">{p.texte}</p>
+                  <p className="mt-1 text-[14px] font-medium text-ink">
+                    {p.texte}
+                  </p>
                   {p.conditions && (
-                    <p className="text-sm text-brand-text-secondary">
-                      {p.conditions}
-                    </p>
+                    <p className="text-[13px] text-sand-600">{p.conditions}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => supprimer(p.id)}
                   aria-label="Supprimer"
-                  className="text-brand-text-secondary"
+                  className="text-sand-600"
                 >
-                  <IconTrash size={18} />
+                  <Trash2 size={18} strokeWidth={2.75} />
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Réglages fiche */}
-        <div className="mt-6 divide-y divide-brand-surface-alt">
+        <div className="mt-6 divide-y divide-divider">
           <Link href={`/fiche/${fiche.id}`} className="flex items-center py-3.5">
-            <span className="flex-1 text-brand-text">Ma fiche</span>
-            <IconChevronRight size={18} className="text-brand-text-secondary" />
+            <span className="flex-1 text-ink">Ma fiche</span>
+            <ChevronRight size={18} strokeWidth={2.75} className="text-sand-500" />
           </Link>
           <div className="flex items-center py-3.5">
-            <span className="flex-1 text-brand-text">Abonnement</span>
-            <span className="text-sm text-brand-text-secondary">
+            <span className="flex-1 text-ink">Abonnement</span>
+            <span className="text-[13px] text-sand-600">
               Proximité · 10€/mois
             </span>
           </div>

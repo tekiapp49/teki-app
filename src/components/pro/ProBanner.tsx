@@ -1,15 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  IconArrowLeft,
-  IconBuildingStore,
-  IconChevronDown,
-} from "@tabler/icons-react";
+import { ArrowLeft, ChevronDown, Store } from "lucide-react";
 
-// Bandeau de contexte plein largeur, coloré selon la fiche, affichant
-// son nom sur chaque écran pro. Le chevron évoque le sélecteur multi-fiches
-// (différé en V1).
+// Bandeau de contexte plein largeur, coloré selon la fiche.
 export default function ProBanner({
   nom,
   type,
@@ -19,16 +13,16 @@ export default function ProBanner({
   type: "commerce" | "association";
   backHref: string;
 }) {
-  const bg = type === "association" ? "bg-brand-green-light" : "bg-brand-terracotta";
+  const bg = type === "association" ? "bg-acc2-800" : "bg-acc";
   return (
-    <div className={`${bg} text-white`}>
+    <div className={`${bg} text-app`}>
       <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
         <Link href={backHref} aria-label="Retour">
-          <IconArrowLeft size={22} />
+          <ArrowLeft size={22} strokeWidth={2.75} />
         </Link>
-        <IconBuildingStore size={20} className="shrink-0" />
-        <span className="flex-1 font-bold">{nom}</span>
-        <IconChevronDown size={20} className="opacity-80" />
+        <Store size={20} strokeWidth={2.75} className="shrink-0" />
+        <span className="flex-1 font-display text-[16px]">{nom}</span>
+        <ChevronDown size={20} strokeWidth={2.75} className="opacity-80" />
       </div>
     </div>
   );

@@ -1,17 +1,17 @@
 import {
-  IconBallFootball,
-  IconHeartHandshake,
-  IconLeaf,
-  IconMusic,
-  type Icon,
-} from "@tabler/icons-react";
+  Dumbbell,
+  HeartHandshake,
+  Leaf,
+  Music,
+  type LucideIcon,
+} from "lucide-react";
 
-// Centres d'intérêt proposés à la complétion du profil (icônes outline).
-export const INTERETS: { key: string; label: string; Icon: Icon }[] = [
-  { key: "culture", label: "Culture", Icon: IconMusic },
-  { key: "sport", label: "Sport", Icon: IconBallFootball },
-  { key: "entraide", label: "Entraide", Icon: IconHeartHandshake },
-  { key: "nature", label: "Nature", Icon: IconLeaf },
+// Centres d'intérêt proposés à la complétion du profil (icônes Lucide).
+export const INTERETS: { key: string; label: string; Icon: LucideIcon }[] = [
+  { key: "culture", label: "Culture", Icon: Music },
+  { key: "sport", label: "Sport", Icon: Dumbbell },
+  { key: "entraide", label: "Entraide", Icon: HeartHandshake },
+  { key: "nature", label: "Nature", Icon: Leaf },
 ];
 
 export function labelInteret(key: string): string {
