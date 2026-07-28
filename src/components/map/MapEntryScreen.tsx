@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, MapPin, Search, Store, Users } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { getLieu, setLieu } from "@/lib/lieu";
+import { getLieu, setLieu, type Lieu } from "@/lib/lieu";
 import { useClientValue } from "@/lib/useClientValue";
 import {
   communeFromAdresse,
@@ -23,6 +23,7 @@ import {
 import LocationOnboardingCard from "./LocationOnboardingCard";
 import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
+import LocationPicker from "@/components/location/LocationPicker";
 import type { FichePin } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
@@ -44,6 +45,8 @@ export default function MapEntryScreen() {
   const [fiches, setFiches] = useState<Fiche[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [picked, setPicked] = useState<Lieu | null>(null);
   const mounted = useClientValue(() => true, false);
   const storedLieu = useClientValue(() => getLieu(), null);
 
@@ -62,8 +65,8 @@ export default function MapEntryScreen() {
         lng: manualLocation.lng,
       };
     }
-    return storedLieu;
-  }, [geoState, manualLocation, storedLieu]);
+    return picked ?? storedLieu;
+  }, [geoState, manualLocation, picked, storedLieu]);
   const hasLocation = effective !== null;
   const lieuName = effective?.name ?? DEFAULT_TERRITORY_NAME;
 
@@ -106,10 +109,14 @@ export default function MapEntryScreen() {
       {hasLocation && (
         <header className="z-[600] flex-none rounded-b-[30px] bg-acc2-800 px-[18px] pb-[15px] pt-[18px] text-app">
           <div className="flex gap-2">
-            <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink"
+            >
               <MapPin size={14} strokeWidth={2.75} />
               {lieuName} ▾
-            </span>
+            </button>
             <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
               10 km ▾
             </span>
@@ -171,6 +178,12 @@ export default function MapEntryScreen() {
       </div>
 
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+      {pickerOpen && (
+        <LocationPicker
+          onSelect={setPicked}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
       <BottomNav />
     </main>
   );
@@ -195,7 +208,7 @@ function SelectedCard({
   );
 
   return (
-    <div className="absolute inset-x-3.5 bottom-3.5 z-[1000]">
+    <div className="absolute inset-x-3.5 bottom-[calc(env(safe-area-inset-bottom)+74px)] z-[1400]">
       <Link
         href={`/fiche/${fiche.id}`}
         onClick={onClose}

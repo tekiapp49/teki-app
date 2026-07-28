@@ -20,13 +20,14 @@ import {
   fetchFeed,
   type FeedPost,
 } from "@/lib/db";
-import { getLieu } from "@/lib/lieu";
+import { getLieu, type Lieu } from "@/lib/lieu";
 import { useClientValue } from "@/lib/useClientValue";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_TERRITORY_NAME } from "@/lib/geo/constants";
 import { useAuth } from "@/components/auth/AuthProvider";
 import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
+import LocationPicker from "@/components/location/LocationPicker";
 
 type Item = {
   id: string;
@@ -76,7 +77,10 @@ export default function FilScreen() {
   const [prenom, setPrenom] = useState<string | null>(null);
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const lieu = useClientValue(() => getLieu(), null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [picked, setPicked] = useState<Lieu | null>(null);
+  const initialLieu = useClientValue(() => getLieu(), null);
+  const lieu = picked ?? initialLieu;
   const lieuName = lieu?.name ?? DEFAULT_TERRITORY_NAME;
 
   useEffect(() => {
@@ -137,10 +141,14 @@ export default function FilScreen() {
           </p>
 
           <div className="mt-[13px] flex gap-2">
-            <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink"
+            >
               <PinIcon />
               {lieuName} ▾
-            </span>
+            </button>
             <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
               10 km ▾
             </span>
@@ -207,6 +215,12 @@ export default function FilScreen() {
       </div>
 
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
+      {pickerOpen && (
+        <LocationPicker
+          onSelect={setPicked}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
       <BottomNav />
     </main>
   );

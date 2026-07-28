@@ -20,3 +20,26 @@ export function getLieu(): Lieu | null {
     return null;
   }
 }
+
+// Historique des lieux utilisés (device-local ; synchronisé au compte
+// quand la personne est connectée, via profils.lieux_recents).
+const KEY_HIST = "teki:lieux-recents";
+
+export function getLieuxRecents(): Lieu[] {
+  try {
+    return JSON.parse(localStorage.getItem(KEY_HIST) || "[]") as Lieu[];
+  } catch {
+    return [];
+  }
+}
+
+export function pushLieuRecent(lieu: Lieu, base?: Lieu[]): Lieu[] {
+  const source = base ?? getLieuxRecents();
+  const next = [lieu, ...source.filter((l) => l.name !== lieu.name)].slice(0, 5);
+  try {
+    localStorage.setItem(KEY_HIST, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+  return next;
+}

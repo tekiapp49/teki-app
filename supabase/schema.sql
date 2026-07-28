@@ -40,6 +40,7 @@ create table if not exists public.profils (
   date_naissance        date,
   adresse               text,
   notifications_actives boolean not null default true,
+  lieux_recents         jsonb not null default '[]'::jsonb,
   cree_le               timestamptz not null default now()
 );
 
