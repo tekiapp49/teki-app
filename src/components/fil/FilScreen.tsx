@@ -238,6 +238,7 @@ export default function FilScreen() {
           current={rayon}
           onSelect={setPickedRayon}
           onClose={() => setRayonPickerOpen(false)}
+          voirCarteHref="/"
         />
       )}
       <BottomNav />

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { Map } from "lucide-react";
 import {
   rayonLabel,
   rayonToSlider,
@@ -12,10 +14,14 @@ export default function RadiusPicker({
   current,
   onSelect,
   onClose,
+  voirCarteHref,
 }: {
   current: Rayon;
   onSelect: (r: Rayon) => void;
   onClose: () => void;
+  // Si fourni, affiche un bouton « Voir la zone sur la carte » (utile sur
+  // le Fil, qui n'a pas de carte pour visualiser le rayon).
+  voirCarteHref?: string;
 }) {
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col justify-end">
@@ -64,6 +70,17 @@ export default function RadiusPicker({
         >
           OK
         </button>
+
+        {voirCarteHref && (
+          <Link
+            href={voirCarteHref}
+            onClick={onClose}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-divider py-3 text-[13.5px] font-semibold text-ink"
+          >
+            <Map size={17} strokeWidth={2.75} />
+            Voir la zone sur la carte
+          </Link>
+        )}
       </div>
     </div>
   );
