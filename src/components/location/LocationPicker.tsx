@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { History, LoaderCircle, LocateFixed } from "lucide-react";
 import CommuneSearch from "@/components/map/CommuneSearch";
-import { SUGGESTED_COMMUNES } from "@/lib/geo/constants";
 import {
   getLieuxRecents,
   pushLieuRecent,
@@ -13,6 +12,18 @@ import {
 import { useClientValue } from "@/lib/useClientValue";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
+
+function dedupByName(lieux: Lieu[]): Lieu[] {
+  const seen = new Set<string>();
+  const out: Lieu[] = [];
+  for (const l of lieux) {
+    if (!seen.has(l.name)) {
+      seen.add(l.name);
+      out.push(l);
+    }
+  }
+  return out;
+}
 
 export default function LocationPicker({
   onSelect,
@@ -24,29 +35,43 @@ export default function LocationPicker({
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const localRecents = useClientValue(getLieuxRecents, [] as Lieu[]);
-  const [dbRecents, setDbRecents] = useState<Lieu[] | null>(null);
+  const [dbLieux, setDbLieux] = useState<Lieu[] | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profils")
-      .select("lieux_recents")
+      .select(
+        "lieu_reference_nom, lieu_reference_lat, lieu_reference_lng, lieux_recents",
+      )
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => setDbRecents((data?.lieux_recents as Lieu[]) ?? []));
+      .then(({ data }) => {
+        const recents = (data?.lieux_recents as Lieu[] | null) ?? [];
+        const ref: Lieu[] =
+          data?.lieu_reference_nom != null && data?.lieu_reference_lat != null
+            ? [
+                {
+                  name: data.lieu_reference_nom as string,
+                  lat: data.lieu_reference_lat as number,
+                  lng: data.lieu_reference_lng as number,
+                },
+              ]
+            : [];
+        setDbLieux(dedupByName([...recents, ...ref]));
+      });
   }, [user, supabase]);
 
-  const recents = user ? (dbRecents ?? []) : localRecents;
+  // Villes enregistrées sur le profil (si connecté), sinon historique local.
+  const lieux = user ? (dbLieux ?? []) : localRecents;
+  const titreListe = user ? "Mes lieux" : "Récents";
 
   async function choisir(lieu: Lieu) {
     setLieu(lieu);
     pushLieuRecent(lieu, localRecents);
     if (user) {
-      const next = [
-        lieu,
-        ...(dbRecents ?? []).filter((l) => l.name !== lieu.name),
-      ].slice(0, 5);
+      const next = dedupByName([lieu, ...(dbLieux ?? [])]).slice(0, 8);
       await supabase
         .from("profils")
         .update({ lieux_recents: next })
@@ -100,20 +125,17 @@ export default function LocationPicker({
 
         <div className="mt-4">
           <CommuneSearch
-            suggestions={SUGGESTED_COMMUNES}
-            onSelect={(c) =>
-              choisir({ name: c.name, lat: c.lat, lng: c.lng })
-            }
+            onSelect={(c) => choisir({ name: c.name, lat: c.lat, lng: c.lng })}
           />
         </div>
 
-        {recents.length > 0 && (
+        {lieux.length > 0 && (
           <div className="mt-4">
             <p className="text-[11px] uppercase tracking-[0.12em] text-sand-600">
-              Récents
+              {titreListe}
             </p>
             <div className="mt-1">
-              {recents.map((r) => (
+              {lieux.map((r) => (
                 <button
                   key={r.name}
                   type="button"

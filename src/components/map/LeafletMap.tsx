@@ -52,8 +52,18 @@ function RecenterOnChange({
   const map = useMap();
   useEffect(() => {
     const size = map.getSize();
-    if (size.x === 0 || size.y === 0) map.setView(center, zoom);
-    else map.flyTo(center, zoom, { duration: 0.8 });
+    if (size.x === 0 || size.y === 0) {
+      map.setView(center, zoom);
+      return;
+    }
+    const cur = map.getCenter();
+    const moved =
+      Math.abs(cur.lat - center[0]) > 1e-5 || Math.abs(cur.lng - center[1]) > 1e-5;
+    // Changement de lieu : animation douce. Changement de zoom seul (slider
+    // de rayon) : application instantanée pour éviter que les animations
+    // s'empilent et que le cercle « saute ».
+    if (moved) map.flyTo(center, zoom, { duration: 0.8 });
+    else map.setView(center, zoom, { animate: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center[0], center[1], zoom]);
   return null;
