@@ -2,9 +2,17 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import { useEffect } from "react";
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import { useEffect, useState } from "react";
 import { createPinIcon } from "./pin-icon";
+import { COMMUNES } from "@/lib/communes";
 
 function svg(path: string, s = 15) {
   return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="#faf7f0" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
@@ -78,6 +86,37 @@ function RecenterOnChange({
   return null;
 }
 
+// Étiquettes de communes : nos propres labels, toujours lisibles dans la
+// plage de zoom où les tuiles OSM masquent les petites villes.
+function communeLabelIcon(name: string) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="transform:translate(-50%,-50%);white-space:nowrap;font-family:var(--font-figtree),Figtree,sans-serif;font-weight:700;font-size:11px;color:#3a352e;text-shadow:0 0 3px #faf7f0,0 0 4px #faf7f0,0 0 5px #faf7f0">${name}</div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+}
+
+function CommuneLabels() {
+  const map = useMap();
+  const [zoom, setZoom] = useState(map.getZoom());
+  useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+  if (zoom < 10) return null;
+  return (
+    <>
+      {COMMUNES.map((c) => (
+        <Marker
+          key={c.name}
+          position={[c.lat, c.lng]}
+          icon={communeLabelIcon(c.name)}
+          interactive={false}
+          keyboard={false}
+        />
+      ))}
+    </>
+  );
+}
+
 export type FichePin = {
   id: string;
   lat: number;
@@ -129,6 +168,8 @@ export default function LeafletMap({
         zoom={zoom}
         fitRadius={circle?.radius}
       />
+
+      <CommuneLabels />
 
       {circle && (
         <Circle
