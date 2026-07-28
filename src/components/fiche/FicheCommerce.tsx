@@ -3,27 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  IconArrowLeft,
-  IconBread,
-  IconCheck,
-  IconHeart,
-  IconHeartFilled,
-  IconLock,
-  IconMapPin,
-  IconPencil,
-  IconPhone,
-  IconRoute,
-  IconStar,
-} from "@tabler/icons-react";
+  Calendar,
+  Check,
+  ChevronLeft,
+  Heart,
+  Lock,
+  Share,
+} from "lucide-react";
 import type { FicheDemo } from "@/lib/fiches/demo";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useFavori } from "@/lib/favoris";
+import BottomNav from "@/components/nav/BottomNav";
 
 export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
-  // Un visiteur non inscrit voit les infos verrouillées. Toucher un
-  // élément verrouillé ouvre l'inscription (téléphone + code SMS) ; une
-  // fois le code validé, on revient ici, débloqué (jamais renvoyé à
-  // l'accueil), et le toast « Inscription terminée » s'affiche.
   const { user, requireAuth } = useAuth();
   const inscrit = !!user;
   const [toast, setToast] = useState(false);
@@ -33,265 +25,172 @@ export default function FicheCommerce({ fiche }: { fiche: FicheDemo }) {
     requireAuth(() => setToast(true));
   }
 
+  function suivre() {
+    if (!inscrit) demanderInscription();
+    else toggleFavori();
+  }
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(false), 3000);
     return () => clearTimeout(t);
   }, [toast]);
 
+  const initiales = fiche.nom
+    .split(" ")
+    .filter((m) => /[A-Za-zÀ-ÿ]/.test(m))
+    .slice(0, 2)
+    .map((m) => m[0].toUpperCase())
+    .join("");
+
+  const itineraireUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(
+    fiche.adresse,
+  )}`;
+
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-md bg-brand-cream pb-10">
-      {/* Couverture + retour + badge catégorie */}
-      <div className="relative">
-        <div className="h-40 w-full bg-brand-surface-alt" />
-
-        <Link
-          href="/"
-          aria-label="Retour"
-          className="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-brand-text/50 text-white backdrop-blur-sm"
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-app">
+      <div className="flex-1 pb-24">
+        {/* Photo */}
+        <div
+          className="washed relative h-[216px] rounded-b-[30px] bg-cover bg-center"
+          style={{ backgroundImage: `url('${fiche.image}')` }}
         >
-          <IconArrowLeft size={20} />
-        </Link>
-
-        {toast && (
-          <div className="absolute inset-x-0 top-4 flex justify-center">
-            <div className="flex items-center gap-2 rounded-full bg-brand-text px-4 py-2 text-sm font-semibold text-white shadow-md">
-              <IconCheck size={16} className="text-brand-green-light" />
-              Inscription terminée
+          <Link
+            href="/fil"
+            aria-label="Retour"
+            className="absolute left-3.5 top-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[rgba(250,247,240,0.94)] text-ink shadow-sm"
+          >
+            <ChevronLeft size={17} strokeWidth={2.75} />
+          </Link>
+          <button
+            type="button"
+            aria-label="Favori"
+            onClick={suivre}
+            className="absolute right-3.5 top-3.5 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-acc text-app shadow-sm"
+          >
+            <Heart
+              size={17}
+              strokeWidth={2.75}
+              fill={inscrit && favori ? "currentColor" : "none"}
+            />
+          </button>
+          {toast && (
+            <div className="absolute inset-x-0 top-3.5 flex justify-center">
+              <span className="flex items-center gap-1.5 rounded-full bg-acc2-800 px-4 py-2 text-[13px] font-semibold text-app shadow-md">
+                <Check size={15} strokeWidth={2.75} />
+                Inscription terminée
+              </span>
             </div>
-          </div>
-        )}
-
-        <div className="absolute -bottom-7 left-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-terracotta ring-4 ring-brand-cream">
-          <IconBread size={30} className="text-white" />
-        </div>
-      </div>
-
-      <div className="px-5 pt-10">
-        {/* Titre + méta */}
-        <h1 className="text-2xl font-bold text-brand-text">{fiche.nom}</h1>
-        <p className="mt-0.5 text-sm text-brand-text-secondary">
-          {fiche.categorie} · {fiche.commune} · {fiche.distance} ·{" "}
-          <span className="font-semibold text-brand-green-light">
-            {fiche.ouvert ? "Ouvert" : "Fermé"}
+          )}
+          <span className="absolute -bottom-6 left-[18px] flex h-14 w-14 items-center justify-center rounded-full bg-acc-200 font-display text-[17px] text-acc-800 outline outline-[3.5px] outline-app">
+            {initiales}
           </span>
-        </p>
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-brand-text-secondary">
-          <IconMapPin size={16} className="shrink-0" />
-          {fiche.adresse}
-        </p>
-
-        {/* Actions : Favoris / Appeler / Itinéraire */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {/* Favoris : déclenche l'inscription pour un visiteur */}
-          {!inscrit ? (
-            <ActionButton
-              icon={<IconHeart size={18} />}
-              label="Favoris"
-              variant="primary"
-              onClick={demanderInscription}
-            />
-          ) : (
-            <ActionButton
-              icon={
-                favori ? (
-                  <IconHeartFilled size={18} />
-                ) : (
-                  <IconHeart size={18} />
-                )
-              }
-              label="Favoris"
-              variant={favori ? "primary" : "neutral"}
-              onClick={toggleFavori}
-            />
-          )}
-
-          {!inscrit ? (
-            <ActionButton
-              icon={<IconLock size={16} />}
-              label="Appeler"
-              variant="locked"
-              onClick={demanderInscription}
-            />
-          ) : (
-            <ActionButton
-              icon={<IconPhone size={18} />}
-              label="Appeler"
-              variant="primary"
-              href={`tel:${fiche.telephone}`}
-            />
-          )}
-
-          {!inscrit ? (
-            <ActionButton
-              icon={<IconLock size={16} />}
-              label="Itinéraire"
-              variant="locked"
-              onClick={demanderInscription}
-            />
-          ) : (
-            <ActionButton
-              icon={<IconRoute size={18} />}
-              label="Itinéraire"
-              variant="primary"
-              href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(
-                fiche.adresse,
-              )}`}
-            />
-          )}
         </div>
 
-        {/* Offre « En ce moment » */}
-        {fiche.offre && (
-          <section className="mt-5 rounded-2xl bg-brand-text p-4 text-white">
-            <p className="text-xs font-bold uppercase tracking-wide text-brand-terracotta">
-              En ce moment
-            </p>
-            <h2 className="mt-1 text-lg font-semibold leading-snug">
-              {inscrit ? fiche.offre.precis : fiche.offre.teaser}
-            </h2>
-            <p className="mt-1 text-sm text-white/60">
-              {fiche.offre.conditions}
-            </p>
+        <div className="px-[18px] pt-8">
+          <div className="flex items-baseline justify-between gap-2.5">
+            <h1 className="font-display text-[23px]">{fiche.nom}</h1>
+            <span className="flex-none text-[12px] font-bold text-acc2-700">
+              {fiche.ouvert ? `Ouvert · ${fiche.fermeA}` : "Fermé"}
+            </span>
+          </div>
+          <p className="mt-[3px] text-[13px] text-sand-600">
+            {fiche.metier} · {fiche.adresse} · {fiche.distance}
+          </p>
 
-            {!inscrit && (
+          {/* Actions */}
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={suivre}
+              className="flex-1 rounded-full bg-acc py-2.5 text-center font-display text-[13.5px] text-app"
+            >
+              {inscrit && favori ? "Suivi" : "Suivre"}
+            </button>
+            {inscrit ? (
+              <a
+                href={itineraireUrl}
+                className="flex-1 rounded-full bg-surface py-2.5 text-center text-[13.5px] font-semibold text-ink"
+              >
+                Itinéraire
+              </a>
+            ) : (
               <button
                 type="button"
                 onClick={demanderInscription}
-                className="mt-3 flex items-start gap-2 text-left text-sm"
+                className="flex-1 rounded-full bg-surface py-2.5 text-center text-[13.5px] font-semibold text-ink"
               >
-                <IconLock
-                  size={16}
-                  className="mt-0.5 shrink-0 text-brand-terracotta"
-                />
-                <span>
-                  <span className="font-bold text-brand-terracotta">
-                    Gratuit
-                  </span>{" "}
-                  · inscris-toi pour voir l&apos;offre
-                </span>
+                Itinéraire
               </button>
             )}
-          </section>
-        )}
-
-        {/* Photos (toujours visibles) */}
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          <div className="aspect-square rounded-xl bg-brand-surface-alt" />
-          <div className="aspect-square rounded-xl bg-brand-surface" />
-          <div className="aspect-square rounded-xl bg-brand-surface-alt" />
-        </div>
-
-        {/* Avis (lecture toujours visible) */}
-        <section className="mt-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-brand-text">Avis</h2>
             <button
               type="button"
-              onClick={inscrit ? undefined : demanderInscription}
-              className="flex items-center gap-1.5 text-sm text-brand-text-on-brown"
+              aria-label="Partager"
+              className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-full bg-surface text-ink"
             >
-              <IconPencil size={16} />
-              Laisser un avis
+              <Share size={17} strokeWidth={2.75} />
             </button>
           </div>
 
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-2xl font-bold text-brand-text">
-              {fiche.note.toLocaleString("fr-FR", {
-                minimumFractionDigits: 1,
-              })}
-            </span>
-            <IconStar size={20} className="text-brand-terracotta" />
-            <span className="text-sm text-brand-text-secondary">
-              {fiche.nbAvis} avis
-            </span>
-          </div>
-
-          {fiche.avis.map((avis) => (
-            <div
-              key={avis.id}
-              className="mt-3 rounded-2xl bg-brand-surface p-4"
-            >
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-surface-alt text-xs font-semibold text-brand-text-on-brown">
-                  {avis.initiales}
+          {/* Promo pleine voix */}
+          {fiche.offre && (
+            <div className="mt-3.5 rounded-[22px] bg-acc px-4 py-3.5 text-app">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] uppercase tracking-[0.12em] text-acc-100">
+                  Promo en cours
                 </span>
-                <span className="text-sm font-semibold text-brand-text">
-                  {avis.auteur}
+                <span className="rounded-full bg-app px-[11px] py-[3px] font-display text-[11px] text-acc-800">
+                  −20 %
                 </span>
-                <IconStar size={15} className="text-brand-terracotta" />
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-                {avis.commentaire}
+              <h3 className="mt-1.5 font-display text-[17px] text-app">
+                {inscrit ? fiche.offre.precis : fiche.offre.teaser}
+              </h3>
+              <p className="mt-1 text-[12.5px] text-acc-100">
+                {fiche.offre.conditions}
+              </p>
+              {!inscrit && (
+                <button
+                  type="button"
+                  onClick={demanderInscription}
+                  className="mt-2 flex items-center gap-1.5 text-left text-[12px]"
+                >
+                  <Lock size={14} strokeWidth={2.75} />
+                  <span>
+                    <b>Gratuit</b> · inscris-toi pour voir l&apos;offre
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Prochainement ici */}
+          <p className="mt-4 text-[11px] uppercase tracking-[0.12em] text-sand-600">
+            Prochainement ici
+          </p>
+          <div className="mt-[9px] flex items-center gap-[13px] rounded-[22px] border border-divider bg-white px-[13px] py-[11px]">
+            <span className="flex h-11 w-11 flex-none flex-col items-center justify-center rounded-full bg-acc2-700 text-app">
+              <b className="font-display text-[14px] leading-none">2</b>
+              <span className="text-[8.5px] tracking-[0.06em]">AOÛT</span>
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[14.5px] font-semibold">
+                Atelier pain au levain
+              </h3>
+              <p className="mt-px flex items-center gap-1 text-[12px] text-acc2-800">
+                <Calendar size={12} strokeWidth={2.75} />
+                Samedi 10 h · 8 places
               </p>
             </div>
-          ))}
-        </section>
-
-        {/* Horaires (toujours visibles) */}
-        <section className="mt-6">
-          <h2 className="text-base font-bold text-brand-text">Horaires</h2>
-          <div className="mt-2 divide-y divide-brand-surface-alt">
-            {fiche.horaires.map((h) => (
-              <div
-                key={h.label}
-                className={`flex items-center justify-between py-2.5 text-sm ${
-                  h.actif
-                    ? "font-semibold text-brand-text"
-                    : "text-brand-text-secondary"
-                }`}
-              >
-                <span>{h.label}</span>
-                <span>{h.valeur}</span>
-              </div>
-            ))}
           </div>
-        </section>
+
+          <p className="mt-3.5 text-[13px] leading-relaxed text-sand-700">
+            {fiche.description}
+          </p>
+        </div>
       </div>
+
+      <BottomNav />
     </main>
-  );
-}
-
-type ActionVariant = "primary" | "neutral" | "locked";
-
-function ActionButton({
-  icon,
-  label,
-  variant,
-  onClick,
-  href,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  variant: ActionVariant;
-  onClick?: () => void;
-  href?: string;
-}) {
-  const styles: Record<ActionVariant, string> = {
-    primary: "bg-brand-green text-white",
-    neutral: "bg-brand-surface-alt text-brand-text",
-    locked: "bg-brand-surface-alt text-brand-text-on-brown",
-  };
-  const className = `flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-sm font-semibold ${styles[variant]}`;
-
-  const content = (
-    <>
-      {icon}
-      <span>{label}</span>
-    </>
-  );
-
-  if (href) {
-    return (
-      <a href={href} className={className}>
-        {content}
-      </a>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {content}
-    </button>
   );
 }

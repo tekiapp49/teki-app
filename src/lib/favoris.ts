@@ -28,6 +28,31 @@ export function toggleFavori(id: string): boolean {
   return nowFavori;
 }
 
+// Notifications par favori (la cloche des cartes). On mémorise les
+// favoris dont la notification est *coupée* ; par défaut elle est active.
+const KEY_NOTIF = "teki:favoris-notif-off";
+
+export function getNotifOff(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(KEY_NOTIF) || "[]") as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function toggleNotifOff(id: string): boolean {
+  const set = new Set(getNotifOff());
+  const nowOff = !set.has(id);
+  if (nowOff) set.add(id);
+  else set.delete(id);
+  try {
+    localStorage.setItem(KEY_NOTIF, JSON.stringify([...set]));
+  } catch {
+    // ignore
+  }
+  return nowOff;
+}
+
 // État réactif d'un favori pour un identifiant donné.
 export function useFavori(id: string): [boolean, () => void] {
   const [favori, setFavori] = useState(false);

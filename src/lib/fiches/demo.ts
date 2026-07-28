@@ -22,6 +22,10 @@ export type FicheDemo = {
   commune: string;
   distance: string; // ex. « 450 m »
   ouvert: boolean;
+  fermeA: string; // heure de fermeture, ex. « 19 h 30 »
+  metier: string; // ex. « Artisan boulanger »
+  description: string;
+  image: string;
   adresse: string;
   telephone: string;
   offre: {
@@ -44,6 +48,12 @@ const BOULANGERIE_DU_PONT: FicheDemo = {
   commune: "Jallais",
   distance: "450 m",
   ouvert: true,
+  fermeA: "19 h 30",
+  metier: "Artisan boulanger",
+  description:
+    "Pain au levain, brioches vendéennes et gâche depuis 1987. Farines de la minoterie de la Sèvre, à 15 km.",
+  image:
+    "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800&q=70",
   adresse: "12 rue du Pont, Jallais",
   telephone: "+33241000000",
   offre: {

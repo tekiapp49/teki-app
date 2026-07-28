@@ -31,6 +31,9 @@ export type FeedItem = {
   badge?: string; // « Info officielle »
   commune?: string; // pour l'affichage dans les favoris
   quand?: string; // événements : « Vendredi 24 juillet, 21h »
+  image?: string; // photo d'arche (vignettes)
+  datePill?: string; // pastille date sur l'arche (événements), ex. « 24 juil. »
+  nouveaute?: boolean; // pastille « nouveauté » sur la vignette (favoris)
 };
 
 // Données de test. Ne figurent que des contenus « actifs » (offre en
@@ -54,9 +57,12 @@ export const FEED: FeedItem[] = [
     nom: "Boulangerie du Pont",
     distanceM: 450,
     distanceLabel: "450 m",
-    accroche: "Offre en cours",
+    accroche: "−20 % dès 18 h",
     href: "/fiche/boulangerie-du-pont",
     commune: "Jallais",
+    image:
+      "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=480&q=70",
+    nouveaute: true,
   },
   {
     id: "amicale-laique",
@@ -75,8 +81,11 @@ export const FEED: FeedItem[] = [
     nom: "Podiums florentais",
     distanceM: 4800,
     distanceLabel: "4,8 km",
-    accroche: "Ven. 24 juil · 21h",
+    accroche: "Vendredi 21 h · 45 y seront",
     commune: "Saint-Florent-le-Vieil",
     quand: "Vendredi 24 juillet, 21h",
+    datePill: "24 juil.",
+    image:
+      "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=480&q=70",
   },
 ];

@@ -3,10 +3,15 @@
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useEffect } from "react";
-import { createPinIcon } from "./pin-icon";
+import { createPinIcon, PIN_PLACE } from "./pin-icon";
 
-const userPin = createPinIcon("#2F5233");
-const communePin = createPinIcon("#C1673B");
+const userPin = createPinIcon({
+  color: "#0f9340",
+  size: 46,
+  selected: true,
+  iconSvg: PIN_PLACE,
+});
+const communePin = createPinIcon({ color: "#d92ba3", iconSvg: PIN_PLACE });
 
 function RecenterOnChange({
   center,

@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  IconArrowLeft,
-  IconCurrentLocation,
-  IconLoader2,
-} from "@tabler/icons-react";
+import { ArrowLeft, LoaderCircle, LocateFixed } from "lucide-react";
 import CommuneSearch from "./CommuneSearch";
 import { SUGGESTED_COMMUNES } from "@/lib/geo/constants";
 import type { CommuneResult } from "@/lib/geo/nominatim";
@@ -25,47 +21,41 @@ export default function LocationOnboardingCard({
   const [manualMode, setManualMode] = useState(false);
   const isRequesting = geoState.status === "requesting";
   const wasRefused = geoState.status === "denied";
-
-  // Après un refus du navigateur, on bascule d'office sur le repli manuel
-  // (l'écran « Indique ton lieu »), sans que la personne ait à cliquer.
   const enManuel = manualMode || wasRefused;
 
   return (
-    <div className="pointer-events-auto w-full rounded-t-3xl bg-brand-cream px-6 pb-8 pt-6 shadow-[0_-8px_30px_rgba(43,43,40,0.10)]">
+    <div className="pointer-events-auto w-full rounded-t-[30px] bg-app px-6 pb-8 pt-6 shadow-[0_-8px_30px_rgba(46,43,37,0.14)]">
       {!enManuel ? (
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-surface">
-            <IconCurrentLocation size={24} className="text-brand-green" />
-          </div>
-
-          <h1 className="mt-4 text-xl font-bold text-brand-text">
-            Autoriser ma position
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-acc2-100 text-acc2-800">
+            <LocateFixed size={24} strokeWidth={2.75} />
+          </span>
+          <h1 className="mt-4 font-display text-[20px]">
+            Vois ce qui se passe près de chez toi
           </h1>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-brand-text-secondary">
-            TéKi te montre ce qui se passe autour de toi. Sans ta position, on
-            ne peut rien te proposer de proche.
+          <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-sand-600">
+            TéKi utilise ta position pour te montrer les commerces, sorties et
+            infos utiles les plus proches. Elle n&apos;est jamais partagée.
           </p>
-
           <button
             type="button"
             onClick={onRequestLocation}
             disabled={isRequesting}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-4 py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-70"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-acc2-800 py-3.5 font-display text-[14px] text-app disabled:opacity-70"
           >
             {isRequesting ? (
               <>
-                <IconLoader2 size={18} className="animate-spin" />
+                <LoaderCircle size={18} className="animate-spin" />
                 Localisation en cours…
               </>
             ) : (
               "Activer ma position"
             )}
           </button>
-
           <button
             type="button"
             onClick={() => setManualMode(true)}
-            className="mt-4 text-sm text-brand-text-on-brown underline underline-offset-4"
+            className="mt-4 text-[13px] text-acc-700 underline underline-offset-4"
           >
             Indiquer mon lieu manuellement
           </button>
@@ -76,33 +66,30 @@ export default function LocationOnboardingCard({
             type="button"
             onClick={() => setManualMode(false)}
             aria-label="Retour"
-            className="mb-3 -ml-1 flex h-8 w-8 items-center justify-center text-brand-text"
+            className="mb-3 -ml-1 flex h-8 w-8 items-center justify-center text-ink"
           >
-            <IconArrowLeft size={22} />
+            <ArrowLeft size={22} strokeWidth={2.75} />
           </button>
-
-          <h1 className="text-xl font-bold text-brand-text">Indique ton lieu</h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-brand-text-secondary">
+          <h1 className="font-display text-[20px]">Indique ton lieu</h1>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-sand-600">
             Ta commune ou ton village, pour te montrer ce qui se passe autour.
           </p>
-
           <div className="mt-4">
             <CommuneSearch
               onSelect={onSelectCommune}
               suggestions={SUGGESTED_COMMUNES}
             />
           </div>
-
           <button
             type="button"
             onClick={onRequestLocation}
             disabled={isRequesting}
-            className="mt-4 flex items-center gap-2 text-sm font-semibold text-brand-green underline underline-offset-4 disabled:opacity-70"
+            className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-acc2-700 underline underline-offset-4 disabled:opacity-70"
           >
             {isRequesting ? (
-              <IconLoader2 size={18} className="animate-spin" />
+              <LoaderCircle size={18} className="animate-spin" />
             ) : (
-              <IconCurrentLocation size={18} />
+              <LocateFixed size={18} strokeWidth={2.75} />
             )}
             Utiliser ma position actuelle
           </button>

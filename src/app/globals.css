@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
-:root {
-  --background: #faf6ef;
-  --foreground: #2b2b28;
-
+@theme {
+  /* ─────────────────────────────────────────────────────────────
+     Ancienne charte — écrans non refondus (auth, espace pro…)
+     ───────────────────────────────────────────────────────────── */
   --color-brand-green: #2f5233;
   --color-brand-green-light: #3b6d11;
   --color-brand-terracotta: #c1673b;
@@ -13,35 +13,67 @@
   --color-brand-text: #2b2b28;
   --color-brand-text-secondary: #6b6a63;
   --color-brand-text-on-brown: #8a6a4f;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-brand-green: var(--color-brand-green);
-  --color-brand-green-light: var(--color-brand-green-light);
-  --color-brand-terracotta: var(--color-brand-terracotta);
-  --color-brand-cream: var(--color-brand-cream);
-  --color-brand-surface: var(--color-brand-surface);
-  --color-brand-surface-alt: var(--color-brand-surface-alt);
-  --color-brand-text: var(--color-brand-text);
-  --color-brand-text-secondary: var(--color-brand-text-secondary);
-  --color-brand-text-on-brown: var(--color-brand-text-on-brown);
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  /* ─────────────────────────────────────────────────────────────
+     Refonte « logo » — tour 13 (variante blanche)
+     ───────────────────────────────────────────────────────────── */
+  --color-app: #faf7f0;
+  --color-surface: #f2ede1;
+  --color-ink: #201e1d;
+  --color-divider: rgba(32, 30, 29, 0.12);
+
+  --color-sand-100: #fbf9f4;
+  --color-sand-200: #f0ece3;
+  --color-sand-300: #dfdad0;
+  --color-sand-400: #cbc4b7;
+  --color-sand-500: #a49d90;
+  --color-sand-600: #837d71;
+  --color-sand-700: #5f594e;
+
+  /* Accent 1 — magenta du logo (promos, commerces, « Tout ») */
+  --color-acc: #d92ba3;
+  --color-acc-100: #fbe0f2;
+  --color-acc-200: #f6bde3;
+  --color-acc-300: #ee85cc;
+  --color-acc-600: #bc2089;
+  --color-acc-700: #9c1a71;
+  --color-acc-800: #771456;
+  --color-acc-900: #5a0f41;
+
+  /* Accent 2 — vert du logo (en-têtes, événements, entraide) */
+  --color-acc2: #12ab4b;
+  --color-acc2-100: #d7f5e0;
+  --color-acc2-200: #a8ebc0;
+  --color-acc2-300: #66d98f;
+  --color-acc2-500: #12ab4b;
+  --color-acc2-600: #0f9340;
+  --color-acc2-700: #0b7a35;
+  --color-acc2-800: #085d28;
+  --color-acc2-900: #06471f;
+
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-caprasimo), Georgia, "Times New Roman", serif;
+
+  --shadow-sm: 0 1px 4px rgba(46, 43, 37, 0.1);
+  --shadow-md: 0 2px 10px rgba(46, 43, 37, 0.12);
+  --shadow-lg: 0 10px 34px rgba(46, 43, 37, 0.16);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-app);
+  color: var(--color-ink);
   font-family: var(--font-sans);
 }
 
-/* Leaflet a besoin de dimensions explicites sur son conteneur */
+/* Traitement photo « washed » : assoit les images dans la page. */
+.washed {
+  filter: saturate(0.82) contrast(0.92) brightness(1.04);
+}
+
+/* Leaflet a besoin de dimensions explicites sur son conteneur. */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: var(--color-brand-surface);
+  background: var(--color-surface);
   font-family: var(--font-sans);
 }

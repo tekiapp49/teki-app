@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { MapPin, Search } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { setLieu } from "@/lib/lieu";
 import type { CommuneResult } from "@/lib/geo/nominatim";
@@ -13,40 +13,38 @@ import {
   LOCATED_ZOOM,
 } from "@/lib/geo/constants";
 import LocationOnboardingCard from "./LocationOnboardingCard";
-import GeolocationBanner from "./GeolocationBanner";
-import BrandMark from "./BrandMark";
+import BottomNav from "@/components/nav/BottomNav";
 import type { MapMarker } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-brand-surface text-sm text-brand-text-secondary">
+    <div className="flex h-full w-full items-center justify-center bg-surface text-sm text-sand-600">
       Chargement de la carte…
     </div>
   ),
 });
 
+const FILTRES_CARTE = ["Aujourd'hui ▾", "Tout ▾", "Ouvert maintenant"];
+
 export default function MapEntryScreen() {
-  const router = useRouter();
   const { state: geoState, request: requestLocation } = useGeolocation();
   const [manualLocation, setManualLocation] = useState<CommuneResult | null>(
     null,
   );
-  const [cardDismissed, setCardDismissed] = useState(false);
 
-  // Dès que la position est connue (géoloc accordée), on mémorise le lieu
-  // et on entre dans le fil « TéKi là ».
+  const geolocActive = geoState.status === "granted";
+  const hasLocation = geolocActive || manualLocation !== null;
+  const lieuName = geolocActive
+    ? "Ma position"
+    : (manualLocation?.name ?? DEFAULT_TERRITORY_NAME);
+
+  // Mémorise le lieu (pour le fil) dès que la géoloc est accordée.
   useEffect(() => {
     if (geoState.status === "granted") {
       setLieu({ name: "Ma position", lat: geoState.lat, lng: geoState.lng });
-      router.push("/fil");
     }
-  }, [geoState, router]);
-
-  const geolocActive = geoState.status === "granted";
-  const showCard = !cardDismissed && !manualLocation && !geolocActive;
-  const showBanner = !geolocActive && (cardDismissed || manualLocation !== null);
-  const bannerLocationName = manualLocation?.name ?? DEFAULT_TERRITORY_NAME;
+  }, [geoState]);
 
   const center = useMemo<[number, number]>(() => {
     if (geoState.status === "granted") return [geoState.lat, geoState.lng];
@@ -54,7 +52,7 @@ export default function MapEntryScreen() {
     return DEFAULT_CENTER;
   }, [geoState, manualLocation]);
 
-  const zoom = geolocActive || manualLocation ? LOCATED_ZOOM : DEFAULT_ZOOM;
+  const zoom = hasLocation ? LOCATED_ZOOM : DEFAULT_ZOOM;
 
   const marker = useMemo<MapMarker | null>(() => {
     if (geoState.status === "granted") {
@@ -73,48 +71,63 @@ export default function MapEntryScreen() {
 
   function handleSelectCommune(result: CommuneResult) {
     setManualLocation(result);
-    setCardDismissed(true);
     setLieu({ name: result.name, lat: result.lat, lng: result.lng });
-    router.push("/fil");
-  }
-
-  // Depuis le bandeau : (ré)activer la vraie géoloc. On garde le lieu
-  // manuel comme repli tant que la position n'a pas été accordée, pour
-  // éviter que la carte ne saute au centre par défaut entre-temps.
-  function handleReactivate() {
-    requestLocation();
   }
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
-      <LeafletMap center={center} zoom={zoom} marker={marker} />
-
-      {/* Haut : logo (écran d'entrée) ou bandeau géoloc persistant */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1000] p-3">
-        {showBanner ? (
-          <GeolocationBanner
-            locationName={bannerLocationName}
-            onActivate={handleReactivate}
-          />
-        ) : showCard ? (
-          <div className="flex justify-center pt-2">
-            <BrandMark />
+    <main className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-app">
+      {hasLocation && (
+        <header className="z-[600] flex-none rounded-b-[30px] bg-acc2-800 px-[18px] pb-[15px] pt-[18px] text-app">
+          <div className="flex gap-2">
+            <span className="inline-flex flex-none items-center gap-1.5 rounded-full bg-app px-3.5 py-[7px] text-[13px] font-semibold text-ink">
+              <MapPin size={14} strokeWidth={2.75} />
+              {lieuName} ▾
+            </span>
+            <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
+              10 km ▾
+            </span>
+            <button
+              type="button"
+              aria-label="Rechercher"
+              className="ml-auto flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full bg-acc2-700 text-app"
+            >
+              <Search size={15} strokeWidth={2.75} />
+            </button>
           </div>
-        ) : null}
+          <div className="mt-2.5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {FILTRES_CARTE.map((f, i) => (
+              <span
+                key={f}
+                className={`flex-none rounded-full px-[13px] py-1.5 text-[12px] ${
+                  i === 0
+                    ? "bg-acc font-display text-app"
+                    : "border-[1.5px] border-acc2-500 text-acc2-100"
+                }`}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        </header>
+      )}
+
+      <div className="relative flex-1">
+        <LeafletMap center={center} zoom={zoom} marker={marker} />
+
+        {!hasLocation && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1000] flex justify-center">
+            <div className="w-full">
+              <LocationOnboardingCard
+                geoState={geoState}
+                onRequestLocation={requestLocation}
+                onSelectCommune={handleSelectCommune}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bas : bottom sheet d'onboarding */}
-      {showCard && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1000] flex justify-center">
-          <div className="w-full max-w-md">
-            <LocationOnboardingCard
-              geoState={geoState}
-              onRequestLocation={requestLocation}
-              onSelectCommune={handleSelectCommune}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+      <BottomNav />
+    </main>
   );
 }
