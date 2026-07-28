@@ -10,9 +10,11 @@ import { useClientValue } from "@/lib/useClientValue";
 import {
   communeFromAdresse,
   distanceLabel,
+  distanceMetres,
   fetchFiches,
   type Fiche,
 } from "@/lib/db";
+import { getRayon, rayonLabel, type Rayon } from "@/lib/rayon";
 import type { CommuneResult } from "@/lib/geo/nominatim";
 import {
   DEFAULT_CENTER,
@@ -24,6 +26,7 @@ import LocationOnboardingCard from "./LocationOnboardingCard";
 import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
 import LocationPicker from "@/components/location/LocationPicker";
+import RadiusPicker from "@/components/location/RadiusPicker";
 import type { FichePin } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
@@ -47,6 +50,10 @@ export default function MapEntryScreen() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [picked, setPicked] = useState<Lieu | null>(null);
+  const [rayonPickerOpen, setRayonPickerOpen] = useState(false);
+  const [pickedRayon, setPickedRayon] = useState<Rayon | undefined>(undefined);
+  const initialRayon = useClientValue(() => getRayon(), 10 as Rayon);
+  const rayon = pickedRayon === undefined ? initialRayon : pickedRayon;
   const mounted = useClientValue(() => true, false);
   const storedLieu = useClientValue(() => getLieu(), null);
 
@@ -86,13 +93,23 @@ export default function MapEntryScreen() {
     () =>
       fiches
         .filter((f) => f.lat != null && f.lng != null)
+        .filter((f) => {
+          if (!effective || rayon === null) return true;
+          return (
+            distanceMetres(effective, {
+              lat: f.lat as number,
+              lng: f.lng as number,
+            }) <=
+            rayon * 1000
+          );
+        })
         .map((f) => ({
           id: f.id,
           lat: f.lat as number,
           lng: f.lng as number,
           type: f.type,
         })),
-    [fiches],
+    [fiches, effective, rayon],
   );
   const userLoc = effective
     ? { lat: effective.lat, lng: effective.lng }
@@ -117,9 +134,13 @@ export default function MapEntryScreen() {
               <MapPin size={14} strokeWidth={2.75} />
               {lieuName} ▾
             </button>
-            <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
-              10 km ▾
-            </span>
+            <button
+              type="button"
+              onClick={() => setRayonPickerOpen(true)}
+              className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100"
+            >
+              {rayonLabel(rayon)} ▾
+            </button>
             <button
               type="button"
               aria-label="Rechercher"
@@ -182,6 +203,13 @@ export default function MapEntryScreen() {
         <LocationPicker
           onSelect={setPicked}
           onClose={() => setPickerOpen(false)}
+        />
+      )}
+      {rayonPickerOpen && (
+        <RadiusPicker
+          current={rayon}
+          onSelect={setPickedRayon}
+          onClose={() => setRayonPickerOpen(false)}
         />
       )}
       <BottomNav />

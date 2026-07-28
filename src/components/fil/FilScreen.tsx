@@ -21,6 +21,7 @@ import {
   type FeedPost,
 } from "@/lib/db";
 import { getLieu, type Lieu } from "@/lib/lieu";
+import { getRayon, rayonLabel, type Rayon } from "@/lib/rayon";
 import { useClientValue } from "@/lib/useClientValue";
 import { createClient } from "@/lib/supabase/client";
 import { DEFAULT_TERRITORY_NAME } from "@/lib/geo/constants";
@@ -28,6 +29,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
 import LocationPicker from "@/components/location/LocationPicker";
+import RadiusPicker from "@/components/location/RadiusPicker";
 
 type Item = {
   id: string;
@@ -83,6 +85,11 @@ export default function FilScreen() {
   const lieu = picked ?? initialLieu;
   const lieuName = lieu?.name ?? DEFAULT_TERRITORY_NAME;
 
+  const [rayonPickerOpen, setRayonPickerOpen] = useState(false);
+  const [pickedRayon, setPickedRayon] = useState<Rayon | undefined>(undefined);
+  const initialRayon = useClientValue(() => getRayon(), 10 as Rayon);
+  const rayon = pickedRayon === undefined ? initialRayon : pickedRayon;
+
   useEffect(() => {
     fetchFeed().then(setPosts);
   }, []);
@@ -99,11 +106,13 @@ export default function FilScreen() {
 
   const items = useMemo(() => {
     if (!posts) return null;
-    const all = posts.map((p) => toItem(p, lieu));
-    const filtered =
-      filtre === "tout" ? all : all.filter((i) => i.famille === filtre);
-    return filtered.sort((a, b) => a.metres - b.metres);
-  }, [posts, lieu, filtre]);
+    let all = posts.map((p) => toItem(p, lieu));
+    if (filtre !== "tout") all = all.filter((i) => i.famille === filtre);
+    // Filtre par rayon (uniquement si on connaît le lieu de référence).
+    if (lieu && rayon !== null)
+      all = all.filter((i) => i.metres <= rayon * 1000);
+    return all.sort((a, b) => a.metres - b.metres);
+  }, [posts, lieu, filtre, rayon]);
 
   const salutation = user && prenom ? `Salut ${prenom} ` : "Bonjour ";
 
@@ -149,9 +158,13 @@ export default function FilScreen() {
               <PinIcon />
               {lieuName} ▾
             </button>
-            <span className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100">
-              10 km ▾
-            </span>
+            <button
+              type="button"
+              onClick={() => setRayonPickerOpen(true)}
+              className="inline-flex flex-none items-center rounded-full bg-acc2-700 px-3.5 py-[7px] text-[13px] text-acc2-100"
+            >
+              {rayonLabel(rayon)} ▾
+            </button>
           </div>
 
           <div className="mt-2.5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -219,6 +232,13 @@ export default function FilScreen() {
         <LocationPicker
           onSelect={setPicked}
           onClose={() => setPickerOpen(false)}
+        />
+      )}
+      {rayonPickerOpen && (
+        <RadiusPicker
+          current={rayon}
+          onSelect={setPickedRayon}
+          onClose={() => setRayonPickerOpen(false)}
         />
       )}
       <BottomNav />
