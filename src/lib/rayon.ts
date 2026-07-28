@@ -49,3 +49,8 @@ export function rayonToSlider(m: number): number {
   const c = clampRayon(m);
   return Math.log(c / RAYON_MIN_M) / Math.log(RAYON_MAX_M / RAYON_MIN_M);
 }
+
+// Zoom Leaflet pour qu'un cercle de rayon `m` (mètres) tienne à l'écran.
+export function zoomForRayon(m: number): number {
+  return Math.max(8, Math.min(15, Math.round(14 - Math.log2(m / 1000))));
+}

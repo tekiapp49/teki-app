@@ -30,6 +30,7 @@ import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
 import LocationPicker from "@/components/location/LocationPicker";
 import RadiusPicker from "@/components/location/RadiusPicker";
+import type { FichePin } from "@/components/map/LeafletMap";
 
 type Item = {
   id: string;
@@ -112,6 +113,20 @@ export default function FilScreen() {
     if (lieu) all = all.filter((i) => i.metres <= rayon);
     return all.sort((a, b) => a.metres - b.metres);
   }, [posts, lieu, filtre, rayon]);
+
+  const miniPins = useMemo<FichePin[]>(() => {
+    if (!posts) return [];
+    const seen = new Set<string>();
+    const out: FichePin[] = [];
+    for (const p of posts) {
+      const f = p.fiche;
+      if (f.lat != null && f.lng != null && !seen.has(f.id)) {
+        seen.add(f.id);
+        out.push({ id: f.id, lat: f.lat, lng: f.lng, type: f.type });
+      }
+    }
+    return out;
+  }, [posts]);
 
   const salutation = user && prenom ? `Salut ${prenom} ` : "Bonjour ";
 
@@ -238,7 +253,9 @@ export default function FilScreen() {
           current={rayon}
           onSelect={setPickedRayon}
           onClose={() => setRayonPickerOpen(false)}
-          voirCarteHref="/"
+          miniMap={
+            lieu ? { lat: lieu.lat, lng: lieu.lng, pins: miniPins } : undefined
+          }
         />
       )}
       <BottomNav />

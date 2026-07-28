@@ -14,7 +14,7 @@ import {
   fetchFiches,
   type Fiche,
 } from "@/lib/db";
-import { getRayon, rayonLabel, type Rayon } from "@/lib/rayon";
+import { getRayon, rayonLabel, zoomForRayon, type Rayon } from "@/lib/rayon";
 import type { CommuneResult } from "@/lib/geo/nominatim";
 import {
   DEFAULT_CENTER,
@@ -86,10 +86,8 @@ export default function MapEntryScreen() {
     () => (effective ? [effective.lat, effective.lng] : DEFAULT_CENTER),
     [effective],
   );
-  // Zoom adapté au rayon (en km) pour que le cercle tienne à l'écran.
-  const zoom = hasLocation
-    ? Math.max(8, Math.min(15, Math.round(14 - Math.log2(rayon / 1000))))
-    : DEFAULT_ZOOM;
+  // Zoom adapté au rayon pour que le cercle tienne à l'écran.
+  const zoom = hasLocation ? zoomForRayon(rayon) : DEFAULT_ZOOM;
 
   const pins = useMemo<FichePin[]>(
     () =>

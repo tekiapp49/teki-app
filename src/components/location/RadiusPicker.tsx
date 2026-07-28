@@ -1,37 +1,45 @@
 "use client";
 
-import Link from "next/link";
-import { Map } from "lucide-react";
+import dynamic from "next/dynamic";
 import {
   rayonLabel,
   rayonToSlider,
   setRayon,
   sliderToRayon,
+  zoomForRayon,
   type Rayon,
 } from "@/lib/rayon";
+import type { FichePin } from "@/components/map/LeafletMap";
+
+const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-surface text-[12px] text-sand-600">
+      Chargement de la carte…
+    </div>
+  ),
+});
 
 export default function RadiusPicker({
   current,
   onSelect,
   onClose,
-  voirCarteHref,
+  miniMap,
 }: {
   current: Rayon;
   onSelect: (r: Rayon) => void;
   onClose: () => void;
-  // Si fourni, affiche un bouton « Voir la zone sur la carte » (utile sur
-  // le Fil, qui n'a pas de carte pour visualiser le rayon).
-  voirCarteHref?: string;
+  // Aperçu cartographique de la zone (utile sur le Fil, qui n'a pas de
+  // carte pour visualiser le rayon).
+  miniMap?: { lat: number; lng: number; pins: FichePin[] };
 }) {
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col justify-end">
-      {/* Fond transparent : la carte (et son cercle) reste visible pendant
-          le réglage. */}
       <button
         type="button"
         aria-label="Fermer"
         onClick={onClose}
-        className="absolute inset-0"
+        className="absolute inset-0 bg-ink/30"
       />
       <div className="pointer-events-auto relative mx-auto w-full max-w-md rounded-t-[30px] bg-app px-6 pb-8 pt-6 shadow-[0_-8px_30px_rgba(46,43,37,0.16)]">
         <div className="flex items-baseline justify-between">
@@ -43,6 +51,23 @@ export default function RadiusPicker({
         <p className="mt-1 text-[13px] text-sand-600">
           On ne te montre que ce qui est dans ce rayon.
         </p>
+
+        {miniMap && (
+          <div className="mt-4 h-[190px] overflow-hidden rounded-[22px] border border-divider">
+            <LeafletMap
+              center={[miniMap.lat, miniMap.lng]}
+              zoom={zoomForRayon(current)}
+              userLoc={{ lat: miniMap.lat, lng: miniMap.lng }}
+              pins={miniMap.pins}
+              circle={{
+                lat: miniMap.lat,
+                lng: miniMap.lng,
+                radius: current,
+              }}
+              interactive={false}
+            />
+          </div>
+        )}
 
         <input
           type="range"
@@ -70,17 +95,6 @@ export default function RadiusPicker({
         >
           OK
         </button>
-
-        {voirCarteHref && (
-          <Link
-            href={voirCarteHref}
-            onClick={onClose}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-divider py-3 text-[13.5px] font-semibold text-ink"
-          >
-            <Map size={17} strokeWidth={2.75} />
-            Voir la zone sur la carte
-          </Link>
-        )}
       </div>
     </div>
   );

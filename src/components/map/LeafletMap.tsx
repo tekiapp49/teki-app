@@ -84,6 +84,7 @@ type LeafletMapProps = {
   selectedId?: string | null;
   onSelectPin?: (id: string) => void;
   circle?: { lat: number; lng: number; radius: number } | null;
+  interactive?: boolean;
 };
 
 export default function LeafletMap({
@@ -94,13 +95,20 @@ export default function LeafletMap({
   selectedId,
   onSelectPin,
   circle,
+  interactive = true,
 }: LeafletMapProps) {
   return (
     <MapContainer
       center={center}
       zoom={zoom}
       zoomControl={false}
-      attributionControl={true}
+      attributionControl={interactive}
+      dragging={interactive}
+      scrollWheelZoom={interactive}
+      doubleClickZoom={interactive}
+      touchZoom={interactive}
+      boxZoom={interactive}
+      keyboard={interactive}
       className="h-full w-full"
     >
       <TileLayer
