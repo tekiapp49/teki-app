@@ -41,18 +41,19 @@ export default function RadiusPicker({
         <input
           type="range"
           min={0}
-          max={1000}
+          max={1}
+          step="any"
           value={rayonToSlider(current)}
           onChange={(e) => {
-            const km = sliderToRayon(Number(e.target.value));
-            setRayon(km);
-            onSelect(km);
+            const m = sliderToRayon(Number(e.target.value));
+            setRayon(m);
+            onSelect(m);
           }}
           className="mt-5 w-full accent-acc"
           aria-label="Rayon de recherche"
         />
         <div className="mt-1 flex justify-between text-[11px] text-sand-600">
-          <span>1 km</span>
+          <span>200 m</span>
           <span>50 km</span>
         </div>
 

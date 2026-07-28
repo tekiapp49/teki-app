@@ -1,11 +1,13 @@
-// Rayon de recherche autour du lieu de référence (en km). Réglé via un
-// slider logarithmique (plus de finesse sur les petites distances).
-export const RAYON_MIN = 1;
-export const RAYON_MAX = 50;
-export type Rayon = number;
+// Rayon de recherche autour du lieu de référence, stocké en MÈTRES.
+// Le slider est continu et logarithmique : le pas grandit progressivement
+// (fin sur les petites distances, large sur les grandes). Affichage en
+// mètres sous 1 km, en km au-delà.
+export const RAYON_MIN_M = 200;
+export const RAYON_MAX_M = 50000;
+export type Rayon = number; // mètres
 
 const KEY = "teki:rayon";
-const DEFAULT_RAYON = 10;
+const DEFAULT_RAYON = 10000;
 
 export function getRayon(): Rayon {
   try {
@@ -20,30 +22,30 @@ export function getRayon(): Rayon {
 
 export function setRayon(r: Rayon): void {
   try {
-    localStorage.setItem(KEY, String(r));
+    localStorage.setItem(KEY, String(Math.round(r)));
   } catch {
     // ignore
   }
 }
 
-export function rayonLabel(r: Rayon): string {
-  return `${Math.round(r)} km`;
+export function rayonLabel(m: Rayon): string {
+  if (m < 1000) return `${Math.round(m / 10) * 10} m`;
+  if (m < 10000) return `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+  return `${Math.round(m / 1000)} km`;
 }
 
-function clampRayon(km: number): number {
-  return Math.max(RAYON_MIN, Math.min(RAYON_MAX, km));
+function clampRayon(m: number): number {
+  return Math.max(RAYON_MIN_M, Math.min(RAYON_MAX_M, m));
 }
 
-// Slider ⇄ rayon (échelle log). La position du slider va de 0 à 1000.
-export function sliderToRayon(v: number): number {
-  const t = Math.min(1, Math.max(0, v / 1000));
-  const km = RAYON_MIN * Math.pow(RAYON_MAX / RAYON_MIN, t);
-  return clampRayon(Math.round(km));
+// Slider ⇄ rayon (échelle log continue). Position du slider dans [0, 1].
+export function sliderToRayon(t: number): number {
+  const clamped = Math.min(1, Math.max(0, t));
+  const m = RAYON_MIN_M * Math.pow(RAYON_MAX_M / RAYON_MIN_M, clamped);
+  return clampRayon(Math.round(m / 10) * 10);
 }
 
-export function rayonToSlider(km: number): number {
-  const c = clampRayon(km);
-  return Math.round(
-    (1000 * Math.log(c / RAYON_MIN)) / Math.log(RAYON_MAX / RAYON_MIN),
-  );
+export function rayonToSlider(m: number): number {
+  const c = clampRayon(m);
+  return Math.log(c / RAYON_MIN_M) / Math.log(RAYON_MAX_M / RAYON_MIN_M);
 }

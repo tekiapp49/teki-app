@@ -87,7 +87,7 @@ export default function FilScreen() {
 
   const [rayonPickerOpen, setRayonPickerOpen] = useState(false);
   const [pickedRayon, setPickedRayon] = useState<Rayon | undefined>(undefined);
-  const initialRayon = useClientValue(() => getRayon(), 10 as Rayon);
+  const initialRayon = useClientValue(() => getRayon(), 10000 as Rayon);
   const rayon = pickedRayon === undefined ? initialRayon : pickedRayon;
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function FilScreen() {
     let all = posts.map((p) => toItem(p, lieu));
     if (filtre !== "tout") all = all.filter((i) => i.famille === filtre);
     // Filtre par rayon (uniquement si on connaît le lieu de référence).
-    if (lieu) all = all.filter((i) => i.metres <= rayon * 1000);
+    if (lieu) all = all.filter((i) => i.metres <= rayon);
     return all.sort((a, b) => a.metres - b.metres);
   }, [posts, lieu, filtre, rayon]);
 

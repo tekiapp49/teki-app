@@ -51,7 +51,7 @@ export default function MapEntryScreen() {
   const [picked, setPicked] = useState<Lieu | null>(null);
   const [rayonPickerOpen, setRayonPickerOpen] = useState(false);
   const [pickedRayon, setPickedRayon] = useState<Rayon | undefined>(undefined);
-  const initialRayon = useClientValue(() => getRayon(), 10 as Rayon);
+  const initialRayon = useClientValue(() => getRayon(), 10000 as Rayon);
   const rayon = pickedRayon === undefined ? initialRayon : pickedRayon;
   const mounted = useClientValue(() => true, false);
   const storedLieu = useClientValue(() => getLieu(), null);
@@ -86,9 +86,9 @@ export default function MapEntryScreen() {
     () => (effective ? [effective.lat, effective.lng] : DEFAULT_CENTER),
     [effective],
   );
-  // Zoom adapté au rayon pour que le cercle tienne à l'écran.
+  // Zoom adapté au rayon (en km) pour que le cercle tienne à l'écran.
   const zoom = hasLocation
-    ? Math.max(8, Math.min(15, Math.round(14 - Math.log2(rayon))))
+    ? Math.max(8, Math.min(15, Math.round(14 - Math.log2(rayon / 1000))))
     : DEFAULT_ZOOM;
 
   const pins = useMemo<FichePin[]>(
@@ -101,8 +101,7 @@ export default function MapEntryScreen() {
             distanceMetres(effective, {
               lat: f.lat as number,
               lng: f.lng as number,
-            }) <=
-            rayon * 1000
+            }) <= rayon
           );
         })
         .map((f) => ({
@@ -182,7 +181,7 @@ export default function MapEntryScreen() {
               ? {
                   lat: effective.lat,
                   lng: effective.lng,
-                  radius: rayon * 1000,
+                  radius: rayon,
                 }
               : null
           }
