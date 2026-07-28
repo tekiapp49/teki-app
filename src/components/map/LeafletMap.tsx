@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { Circle, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useEffect } from "react";
 import { createPinIcon } from "./pin-icon";
 
@@ -73,6 +73,7 @@ type LeafletMapProps = {
   pins?: FichePin[];
   selectedId?: string | null;
   onSelectPin?: (id: string) => void;
+  circle?: { lat: number; lng: number; radius: number } | null;
 };
 
 export default function LeafletMap({
@@ -82,6 +83,7 @@ export default function LeafletMap({
   pins = [],
   selectedId,
   onSelectPin,
+  circle,
 }: LeafletMapProps) {
   return (
     <MapContainer
@@ -96,6 +98,19 @@ export default function LeafletMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <RecenterOnChange center={center} zoom={zoom} />
+
+      {circle && (
+        <Circle
+          center={[circle.lat, circle.lng]}
+          radius={circle.radius}
+          pathOptions={{
+            color: "#d92ba3",
+            weight: 2,
+            fillColor: "#d92ba3",
+            fillOpacity: 0.07,
+          }}
+        />
+      )}
 
       {userLoc && <Marker position={[userLoc.lat, userLoc.lng]} icon={userIcon} />}
 

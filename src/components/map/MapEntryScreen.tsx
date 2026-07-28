@@ -20,7 +20,6 @@ import {
   DEFAULT_CENTER,
   DEFAULT_TERRITORY_NAME,
   DEFAULT_ZOOM,
-  LOCATED_ZOOM,
 } from "@/lib/geo/constants";
 import LocationOnboardingCard from "./LocationOnboardingCard";
 import BottomNav from "@/components/nav/BottomNav";
@@ -87,14 +86,17 @@ export default function MapEntryScreen() {
     () => (effective ? [effective.lat, effective.lng] : DEFAULT_CENTER),
     [effective],
   );
-  const zoom = hasLocation ? LOCATED_ZOOM : DEFAULT_ZOOM;
+  // Zoom adapté au rayon pour que le cercle tienne à l'écran.
+  const zoom = hasLocation
+    ? Math.max(8, Math.min(15, Math.round(14 - Math.log2(rayon))))
+    : DEFAULT_ZOOM;
 
   const pins = useMemo<FichePin[]>(
     () =>
       fiches
         .filter((f) => f.lat != null && f.lng != null)
         .filter((f) => {
-          if (!effective || rayon === null) return true;
+          if (!effective) return true;
           return (
             distanceMetres(effective, {
               lat: f.lat as number,
@@ -175,6 +177,15 @@ export default function MapEntryScreen() {
           pins={pins}
           selectedId={selectedId}
           onSelectPin={setSelectedId}
+          circle={
+            effective
+              ? {
+                  lat: effective.lat,
+                  lng: effective.lng,
+                  radius: rayon * 1000,
+                }
+              : null
+          }
         />
 
         {mounted && !hasLocation && (

@@ -109,8 +109,7 @@ export default function FilScreen() {
     let all = posts.map((p) => toItem(p, lieu));
     if (filtre !== "tout") all = all.filter((i) => i.famille === filtre);
     // Filtre par rayon (uniquement si on connaît le lieu de référence).
-    if (lieu && rayon !== null)
-      all = all.filter((i) => i.metres <= rayon * 1000);
+    if (lieu) all = all.filter((i) => i.metres <= rayon * 1000);
     return all.sort((a, b) => a.metres - b.metres);
   }, [posts, lieu, filtre, rayon]);
 
