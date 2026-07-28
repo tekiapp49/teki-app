@@ -157,12 +157,20 @@ export async function searchFiches(query: string): Promise<Fiche[]> {
   const q = query.trim();
   if (q.length < 2) return [];
   const supabase = createClient();
-  const { data } = await supabase
+
+  // Recherche « intelligente » (fautes + synonymes) via la fonction SQL.
+  const { data, error } = await supabase.rpc("rechercher_fiches", { q });
+  if (!error && data) return data as Fiche[];
+
+  // Repli si la migration recherche n'est pas encore appliquée :
+  // sous-chaîne sur nom + catégorie + description.
+  const like = `%${q}%`;
+  const { data: d2 } = await supabase
     .from("fiches")
     .select(FICHE_COLS)
-    .ilike("nom", `%${q}%`)
+    .or(`nom.ilike.${like},categorie.ilike.${like},description.ilike.${like}`)
     .limit(10);
-  return (data as Fiche[] | null) ?? [];
+  return (d2 as Fiche[] | null) ?? [];
 }
 
 // ── Distance ─────────────────────────────────────────────────────────
