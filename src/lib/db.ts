@@ -68,6 +68,43 @@ export async function fetchFeed(): Promise<FeedPost[]> {
     });
 }
 
+// Toutes les publications publiées (sans filtre « actif maintenant »),
+// pour pouvoir évaluer l'activité à une date choisie (carte).
+export async function fetchPublicationsPubliees(): Promise<FeedPost[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("publications")
+    .select(`*, fiche:fiches(${FICHE_COLS})`)
+    .eq("statut", "publie");
+  if (error || !data) return [];
+  return data
+    .filter((row) => row.fiche)
+    .map((row) => {
+      const { fiche, ...publication } = row as unknown as Publication & {
+        fiche: Fiche;
+      };
+      return { publication, fiche };
+    });
+}
+
+// La publication est-elle active à la date donnée (YYYY-MM-DD) ?
+// dateISO null = pas de filtre de date.
+export function publicationActiveOn(
+  p: Publication,
+  dateISO: string | null,
+): boolean {
+  if (!dateISO) return true;
+  if (p.type === "promo") {
+    const okStart = !p.date_debut || p.date_debut.slice(0, 10) <= dateISO;
+    const okEnd = !p.date_fin || p.date_fin.slice(0, 10) >= dateISO;
+    return okStart && okEnd;
+  }
+  if (p.type === "evenement") {
+    return !p.date_evenement || p.date_evenement.slice(0, 10) === dateISO;
+  }
+  return true; // actu : information permanente
+}
+
 export async function fetchFiches(): Promise<Fiche[]> {
   const supabase = createClient();
   const { data } = await supabase.from("fiches").select(FICHE_COLS);
@@ -171,6 +208,13 @@ export function feedKind(
   if (post.publication.type === "evenement") return "evenement";
   if (post.publication.type === "promo") return "commerce";
   return post.fiche.type === "association" ? "association" : "commerce";
+}
+
+export function feedFamille(
+  post: FeedPost,
+): "commerces" | "sorties" | "entraide" {
+  const k = feedKind(post);
+  return k === "commerce" ? "commerces" : k === "evenement" ? "sorties" : "entraide";
 }
 
 const MOIS_COURTS = [

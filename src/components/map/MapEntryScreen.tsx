@@ -11,10 +11,14 @@ import {
   communeFromAdresse,
   distanceLabel,
   distanceMetres,
-  fetchFiches,
+  feedFamille,
+  fetchPublicationsPubliees,
+  publicationActiveOn,
   type Fiche,
+  type FeedPost,
 } from "@/lib/db";
 import { getRayon, rayonLabel, zoomForRayon, type Rayon } from "@/lib/rayon";
+import { type Filtre } from "@/lib/feed/demo";
 import type { CommuneResult } from "@/lib/geo/nominatim";
 import {
   DEFAULT_CENTER,
@@ -26,6 +30,7 @@ import BottomNav from "@/components/nav/BottomNav";
 import SearchOverlay from "@/components/search/SearchOverlay";
 import LocationPicker from "@/components/location/LocationPicker";
 import RadiusPicker from "@/components/location/RadiusPicker";
+import { DatePicker, dateFiltreLabel, TypePicker } from "./MapFilterSheets";
 import type { FichePin } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
@@ -37,28 +42,46 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ),
 });
 
-const FILTRES_CARTE = ["Aujourd'hui ▾", "Tout ▾", "Ouvert maintenant"];
-
 export default function MapEntryScreen() {
   const { state: geoState, request: requestLocation } = useGeolocation();
   const [manualLocation, setManualLocation] = useState<CommuneResult | null>(
     null,
   );
-  const [fiches, setFiches] = useState<Fiche[]>([]);
+  const [posts, setPosts] = useState<FeedPost[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [picked, setPicked] = useState<Lieu | null>(null);
   const [rayonPickerOpen, setRayonPickerOpen] = useState(false);
   const [pickedRayon, setPickedRayon] = useState<Rayon | undefined>(undefined);
+  const [typeFiltre, setTypeFiltre] = useState<Filtre>("tout");
+  const [dateFiltre, setDateFiltre] = useState<string | null>(null);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
   const initialRayon = useClientValue(() => getRayon(), 10000 as Rayon);
   const rayon = pickedRayon === undefined ? initialRayon : pickedRayon;
   const mounted = useClientValue(() => true, false);
   const storedLieu = useClientValue(() => getLieu(), null);
 
   useEffect(() => {
-    fetchFiches().then(setFiches);
+    fetchPublicationsPubliees().then(setPosts);
   }, []);
+
+  // Fiches à afficher : celles qui ont au moins une publication qui passe
+  // les filtres type d'activité + date.
+  const fiches = useMemo<Fiche[]>(() => {
+    const byId = new Map<string, { fiche: Fiche; ok: boolean }>();
+    for (const p of posts) {
+      const typeOk = typeFiltre === "tout" || feedFamille(p) === typeFiltre;
+      const dateOk = publicationActiveOn(p.publication, dateFiltre);
+      const prev = byId.get(p.fiche.id);
+      byId.set(p.fiche.id, {
+        fiche: p.fiche,
+        ok: (prev?.ok ?? false) || (typeOk && dateOk),
+      });
+    }
+    return [...byId.values()].filter((v) => v.ok).map((v) => v.fiche);
+  }, [posts, typeFiltre, dateFiltre]);
 
   const effective = useMemo(() => {
     if (geoState.status === "granted") {
@@ -150,18 +173,31 @@ export default function MapEntryScreen() {
             </button>
           </div>
           <div className="mt-2.5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {FILTRES_CARTE.map((f, i) => (
-              <span
-                key={f}
-                className={`flex-none rounded-full px-[13px] py-1.5 text-[12px] ${
-                  i === 0
-                    ? "bg-acc font-display text-app"
-                    : "border-[1.5px] border-acc2-500 text-acc2-100"
-                }`}
-              >
-                {f}
-              </span>
-            ))}
+            <button
+              type="button"
+              onClick={() => setDateOpen(true)}
+              className={`flex-none rounded-full px-[13px] py-1.5 text-[12px] ${
+                dateFiltre
+                  ? "bg-acc font-display text-app"
+                  : "border-[1.5px] border-acc2-500 text-acc2-100"
+              }`}
+            >
+              {dateFiltreLabel(dateFiltre)} ▾
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeOpen(true)}
+              className={`flex-none rounded-full px-[13px] py-1.5 text-[12px] ${
+                typeFiltre !== "tout"
+                  ? "bg-acc font-display text-app"
+                  : "border-[1.5px] border-acc2-500 text-acc2-100"
+              }`}
+            >
+              {typeFiltre === "tout"
+                ? "Type"
+                : typeFiltre.charAt(0).toUpperCase() + typeFiltre.slice(1)}{" "}
+              ▾
+            </button>
           </div>
         </header>
       )}
@@ -218,6 +254,20 @@ export default function MapEntryScreen() {
           current={rayon}
           onSelect={setPickedRayon}
           onClose={() => setRayonPickerOpen(false)}
+        />
+      )}
+      {typeOpen && (
+        <TypePicker
+          current={typeFiltre}
+          onSelect={setTypeFiltre}
+          onClose={() => setTypeOpen(false)}
+        />
+      )}
+      {dateOpen && (
+        <DatePicker
+          current={dateFiltre}
+          onSelect={setDateFiltre}
+          onClose={() => setDateOpen(false)}
         />
       )}
       <BottomNav />
